@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
     private var modelPos = 0
 
     /** Default device is CPU */
-    private var device = Device.CPU
+    private var device = Device.NNAPI
 
     private lateinit var tvDebug: TextView
     private lateinit var tvScore: TextView
@@ -289,9 +289,9 @@ class MainActivity : AppCompatActivity() {
     // Change device (accelerator) type when app is running
     private fun changeDevice(position: Int) {
         val targetDevice = when (position) {
-            0 -> Device.CPU
-            1 -> Device.GPU
-            else -> Device.NNAPI
+            0 -> Device.NNAPI
+            1 -> Device.CPU
+            else -> Device.GPU
         }
         if (device == targetDevice) return
         device = targetDevice
