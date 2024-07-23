@@ -74,7 +74,7 @@ class CameraSource(
     init {
         val context = surfaceView.context
         PREVIEW_HEIGHT = getScreenWidth(context)
-        previewHeight = getScreenHeight(context)
+        PREVIEW_HEIGHT = getScreenHeight(context)
     }
 
     private val lock = Any()
