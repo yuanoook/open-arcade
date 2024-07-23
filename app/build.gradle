@@ -9,7 +9,7 @@ android {
     namespace "org.tensorflow.lite.examples.poseestimation"
 
     defaultConfig {
-        applicationId "org.tensorflow.lite.examples.poseestimation"
+        applicationId 'com.r.openarcade'
         minSdkVersion 24
         targetSdkVersion 35
         versionCode 1
