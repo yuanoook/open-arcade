@@ -1,5 +1,5 @@
 <resources>
-    <string name="tfe_pe_app_name">Open Arcade</string>
+    <string name="tfe_pe_app_name">1 Open Arcade</string>
     <string name="tfe_pe_request_permission">This app needs camera permission.</string>
     <string name="tfe_pe_tv_score">Score: %.2f</string>
     <string name="tfe_pe_tv_model">Model: </string>

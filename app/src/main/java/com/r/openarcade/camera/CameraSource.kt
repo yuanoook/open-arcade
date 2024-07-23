@@ -133,12 +133,21 @@ class CameraSource(
                 val rotateMatrix = Matrix()
                 val isFrontFacing = isFrontFacingCamera(cameraManager, cameraId)
 
-                listener?.onDebug(listOf("TV: " + isTV.toString(), "FrontFace: " + isFrontFacing))
+                listener?.onDebug(
+                    listOf(
+                        "TV:",
+                        isTV.toString(),
+                        "FrontFace:",
+                        isFrontFacing,
+                        PREVIEW_WIDTH,
+                        PREVIEW_HEIGHT
+                    )
+                )
 
                 if (isTV) {
                     rotateMatrix.postScale(-1.0f, 1.0f)
                 } else {
-                    rotateMatrix.postRotate(90.0f)
+//                    rotateMatrix.postRotate(90.0f)
                 }
 
                 val rotatedBitmap = Bitmap.createBitmap(
@@ -288,13 +297,6 @@ class CameraSource(
         synchronized(lock) {
             detector?.estimatePoses(bitmap)?.let {
                 persons.addAll(it)
-
-                // if the model only returns one item, allow running the Pose classifier.
-                if (persons.isNotEmpty()) {
-                    classifier?.run {
-                        classificationResult = classify(persons[0])
-                    }
-                }
             }
         }
         frameProcessedInOneSecondInterval++
@@ -303,9 +305,8 @@ class CameraSource(
             listener?.onFPSListener(framesPerSecond)
         }
 
-        // if the model returns only one item, show that item's score.
         if (persons.isNotEmpty()) {
-            listener?.onDetectedInfo(persons[0].score, classificationResult)
+            listener?.onDetectedInfo(persons[0].score)
         }
         visualize(persons, bitmap)
     }
@@ -363,7 +364,7 @@ class CameraSource(
     interface CameraSourceListener {
         fun onFPSListener(fps: Int)
 
-        fun onDetectedInfo(personScore: Float?, poseLabels: List<Pair<String, Float>>?)
+        fun onDetectedInfo(personScore: Float?)
 
         fun onDebug(info: List<Any>)
     }

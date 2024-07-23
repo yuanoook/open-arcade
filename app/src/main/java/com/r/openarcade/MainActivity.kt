@@ -164,10 +164,9 @@ class MainActivity : AppCompatActivity() {
             }
     
             override fun onDetectedInfo(
-                personScore: Float?,
-                poseLabels: List<Pair<String, Float>>?
+                personScore: Float?
             ) {
-                updateDetectedInfo(personScore, poseLabels)
+                tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
             }
     
             override fun onDebug(info: List<Any>) {
@@ -175,28 +174,6 @@ class MainActivity : AppCompatActivity() {
             }
         }).apply {
             prepareCamera()
-        }
-    }
-    
-    private fun updateDetectedInfo(
-        personScore: Float?,
-        poseLabels: List<Pair<String, Float>>?
-    ) {
-        tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
-    
-        poseLabels?.sortedByDescending { it.second }?.let {
-            tvClassificationValue1.text = getString(
-                R.string.tfe_pe_tv_classification_value,
-                convertPoseLabels(it.getOrNull(0))
-            )
-            tvClassificationValue2.text = getString(
-                R.string.tfe_pe_tv_classification_value,
-                convertPoseLabels(it.getOrNull(1))
-            )
-            tvClassificationValue3.text = getString(
-                R.string.tfe_pe_tv_classification_value,
-                convertPoseLabels(it.getOrNull(2))
-            )
         }
     }
 
