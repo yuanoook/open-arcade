@@ -68,12 +68,12 @@ class CameraSource(
         }
     }
 
-    private val PREVIEW_HEIGHT: Int
+    private val PREVIEW_WIDTH: Int
     private val PREVIEW_HEIGHT: Int
 
     init {
         val context = surfaceView.context
-        PREVIEW_HEIGHT = getScreenWidth(context)
+        PREVIEW_WIDTH = getScreenWidth(context)
         PREVIEW_HEIGHT = getScreenHeight(context)
     }
 
