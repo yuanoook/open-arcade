@@ -93,47 +93,6 @@ class MainActivity : AppCompatActivity() {
                     .show(supportFragmentManager, FRAGMENT_DIALOG)
             }
         }
-    private var changeModelListener = object : AdapterView.OnItemSelectedListener {
-        override fun onNothingSelected(parent: AdapterView<*>?) {
-            // do nothing
-        }
-
-        override fun onItemSelected(
-            parent: AdapterView<*>?,
-            view: View?,
-            position: Int,
-            id: Long
-        ) {
-            changeModel(position)
-        }
-    }
-
-    private var changeDeviceListener = object : AdapterView.OnItemSelectedListener {
-        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-            changeDevice(position)
-        }
-
-        override fun onNothingSelected(parent: AdapterView<*>?) {
-            // do nothing
-        }
-    }
-
-    private var changeTrackerListener = object : AdapterView.OnItemSelectedListener {
-        override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-            changeTracker(position)
-        }
-
-        override fun onNothingSelected(parent: AdapterView<*>?) {
-            // do nothing
-        }
-    }
-
-    private var setClassificationListener =
-        CompoundButton.OnCheckedChangeListener { _, isChecked ->
-            showClassificationResult(isChecked)
-            isClassifyPose = isChecked
-            isPoseClassifier()
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -153,9 +112,7 @@ class MainActivity : AppCompatActivity() {
         tvClassificationValue3 = findViewById(R.id.tvClassificationValue3)
         swClassification = findViewById(R.id.swPoseClassification)
         vClassificationOption = findViewById(R.id.vClassificationOption)
-        initSpinner()
-        spnModel.setSelection(modelPos)
-        swClassification.setOnCheckedChangeListener(setClassificationListener)
+
         if (!isCameraPermissionGranted()) {
             requestPermission()
         }
@@ -242,60 +199,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun isPoseClassifier() {
         cameraSource?.setClassifier(if (isClassifyPose) PoseClassifier.create(this) else null)
-    }
-
-    // Initialize spinners to let user select model/accelerator/tracker.
-    private fun initSpinner() {
-        ArrayAdapter.createFromResource(
-            this,
-            R.array.tfe_pe_models_array,
-            android.R.layout.simple_spinner_item
-        ).also { adapter ->
-            // Specify the layout to use when the list of choices appears
-            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            // Apply the adapter to the spinner
-            spnModel.adapter = adapter
-            spnModel.onItemSelectedListener = changeModelListener
-        }
-
-        ArrayAdapter.createFromResource(
-            this,
-            R.array.tfe_pe_device_name, android.R.layout.simple_spinner_item
-        ).also { adaper ->
-            adaper.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-
-            spnDevice.adapter = adaper
-            spnDevice.onItemSelectedListener = changeDeviceListener
-        }
-
-        ArrayAdapter.createFromResource(
-            this,
-            R.array.tfe_pe_tracker_array, android.R.layout.simple_spinner_item
-        ).also { adaper ->
-            adaper.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-
-            spnTracker.adapter = adaper
-            spnTracker.onItemSelectedListener = changeTrackerListener
-        }
-    }
-
-    // Change model when app is running
-    private fun changeModel(position: Int) {
-        if (modelPos == position) return
-        modelPos = position
-        createPoseEstimator()
-    }
-
-    // Change device (accelerator) type when app is running
-    private fun changeDevice(position: Int) {
-        val targetDevice = when (position) {
-            0 -> Device.NNAPI
-            1 -> Device.CPU
-            else -> Device.GPU
-        }
-        if (device == targetDevice) return
-        device = targetDevice
-        createPoseEstimator()
     }
 
     // Change tracker for Movenet MultiPose model

@@ -10,29 +10,27 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-        <TextView
-            android:id="@+id/tvDebug"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:textColor="#FFFFFF"
-            android:gravity="start" />
+    <TextView
+        android:id="@+id/tvDebug"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:textColor="#FFFFFF"
+        android:gravity="start" />
 
-        <!-- TextView for FPS Info (center) -->
-        <TextView
-            android:id="@+id/tvFps"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:gravity="start" />
+    <TextView
+        android:id="@+id/tvFps"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:gravity="start" />
 
-        <!-- TextView for Score Info (right) -->
-        <TextView
-            android:id="@+id/tvScore"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
-            android:gravity="end" />
+    <TextView
+        android:id="@+id/tvScore"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="#FFFFFF"
+        android:gravity="end" />
 
     <include layout="@layout/bottom_sheet_layout"/>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
