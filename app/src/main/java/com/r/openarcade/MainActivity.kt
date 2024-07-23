@@ -145,50 +145,64 @@ class MainActivity : AppCompatActivity() {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    // open camera
     private fun openCamera() {
-        if (isCameraPermissionGranted()) {
-            if (cameraSource == null) {
-                cameraSource =
-                    CameraSource(surfaceView, object : CameraSource.CameraSourceListener {
-                        override fun onFPSListener(fps: Int) {
-                            tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
-                        }
+        if (!isCameraPermissionGranted()) return
+    
+        if (cameraSource == null) {
+            initializeCameraSource()
+            isPoseClassifier()
+            startCameraSource()
+        }
+    
+        createPoseEstimator()
+    }
 
-                        override fun onDetectedInfo(
-                            personScore: Float?,
-                            poseLabels: List<Pair<String, Float>>?
-                        ) {
-                            tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
-                            poseLabels?.sortedByDescending { it.second }?.let {
-                                tvClassificationValue1.text = getString(
-                                    R.string.tfe_pe_tv_classification_value,
-                                    convertPoseLabels(if (it.isNotEmpty()) it[0] else null)
-                                )
-                                tvClassificationValue2.text = getString(
-                                    R.string.tfe_pe_tv_classification_value,
-                                    convertPoseLabels(if (it.size >= 2) it[1] else null)
-                                )
-                                tvClassificationValue3.text = getString(
-                                    R.string.tfe_pe_tv_classification_value,
-                                    convertPoseLabels(if (it.size >= 3) it[2] else null)
-                                )
-                            }
-                        }
-
-                        override fun onDebug(info: List<Any>) {
-                            tvDebug.text = info.joinToString(separator = " ") { it.toString() }
-                        }
-
-                    }).apply {
-                        prepareCamera()
-                    }
-                isPoseClassifier()
-                lifecycleScope.launch(Dispatchers.Main) {
-                    cameraSource?.initCamera()
-                }
+    private fun initializeCameraSource() {
+        cameraSource = CameraSource(surfaceView, object : CameraSource.CameraSourceListener {
+            override fun onFPSListener(fps: Int) {
+                tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
             }
-            createPoseEstimator()
+    
+            override fun onDetectedInfo(
+                personScore: Float?,
+                poseLabels: List<Pair<String, Float>>?
+            ) {
+                updateDetectedInfo(personScore, poseLabels)
+            }
+    
+            override fun onDebug(info: List<Any>) {
+                tvDebug.text = info.joinToString(separator = " ") { it.toString() }
+            }
+        }).apply {
+            prepareCamera()
+        }
+    }
+    
+    private fun updateDetectedInfo(
+        personScore: Float?,
+        poseLabels: List<Pair<String, Float>>?
+    ) {
+        tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
+    
+        poseLabels?.sortedByDescending { it.second }?.let {
+            tvClassificationValue1.text = getString(
+                R.string.tfe_pe_tv_classification_value,
+                convertPoseLabels(it.getOrNull(0))
+            )
+            tvClassificationValue2.text = getString(
+                R.string.tfe_pe_tv_classification_value,
+                convertPoseLabels(it.getOrNull(1))
+            )
+            tvClassificationValue3.text = getString(
+                R.string.tfe_pe_tv_classification_value,
+                convertPoseLabels(it.getOrNull(2))
+            )
+        }
+    }
+
+    private fun startCameraSource() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            cameraSource?.initCamera()
         }
     }
 
