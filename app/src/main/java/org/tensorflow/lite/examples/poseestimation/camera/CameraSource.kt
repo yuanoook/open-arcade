@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.camera
+package com.r.openarcade.camera
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -36,13 +36,13 @@ import android.util.Log
 import android.view.Surface
 import android.view.SurfaceView
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.tensorflow.lite.examples.poseestimation.VisualizationUtils
-import org.tensorflow.lite.examples.poseestimation.YuvToRgbConverter
-import org.tensorflow.lite.examples.poseestimation.data.Person
-import org.tensorflow.lite.examples.poseestimation.ml.MoveNetMultiPose
-import org.tensorflow.lite.examples.poseestimation.ml.PoseClassifier
-import org.tensorflow.lite.examples.poseestimation.ml.PoseDetector
-import org.tensorflow.lite.examples.poseestimation.ml.TrackerType
+import com.r.openarcade.VisualizationUtils
+import com.r.openarcade.YuvToRgbConverter
+import com.r.openarcade.data.Person
+import com.r.openarcade.ml.MoveNetMultiPose
+import com.r.openarcade.ml.PoseClassifier
+import com.r.openarcade.ml.PoseDetector
+import com.r.openarcade.ml.TrackerType
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException

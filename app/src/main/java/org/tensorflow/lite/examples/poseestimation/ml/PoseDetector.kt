@@ -14,10 +14,10 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.ml
+package com.r.openarcade.ml
 
 import android.graphics.Bitmap
-import org.tensorflow.lite.examples.poseestimation.data.Person
+import com.r.openarcade.data.Person
 
 interface PoseDetector : AutoCloseable {
 

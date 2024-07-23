@@ -14,11 +14,11 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.tracker
+package com.r.openarcade.tracker
 
 import androidx.annotation.VisibleForTesting
-import org.tensorflow.lite.examples.poseestimation.data.KeyPoint
-import org.tensorflow.lite.examples.poseestimation.data.Person
+import com.r.openarcade.data.KeyPoint
+import com.r.openarcade.data.Person
 import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min

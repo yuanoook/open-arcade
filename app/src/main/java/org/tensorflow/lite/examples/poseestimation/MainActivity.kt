@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation
+package com.r.openarcade
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -36,9 +36,9 @@ import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import org.tensorflow.lite.examples.poseestimation.camera.CameraSource
-import org.tensorflow.lite.examples.poseestimation.data.Device
-import org.tensorflow.lite.examples.poseestimation.ml.*
+import com.r.openarcade.camera.CameraSource
+import com.r.openarcade.data.Device
+import com.r.openarcade.ml.*
 
 import android.util.Log
 

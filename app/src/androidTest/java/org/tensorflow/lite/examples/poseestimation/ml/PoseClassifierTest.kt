@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.ml
+package com.r.openarcade.ml
 
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -24,7 +24,7 @@ import junit.framework.TestCase.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.tensorflow.lite.examples.poseestimation.data.Device
+import com.r.openarcade.data.Device
 
 @RunWith(AndroidJUnit4::class)
 class PoseClassifierTest {

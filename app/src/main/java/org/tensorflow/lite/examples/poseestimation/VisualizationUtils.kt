@@ -14,14 +14,14 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation
+package com.r.openarcade
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import org.tensorflow.lite.examples.poseestimation.data.BodyPart
-import org.tensorflow.lite.examples.poseestimation.data.Person
+import com.r.openarcade.data.BodyPart
+import com.r.openarcade.data.Person
 import kotlin.math.max
 
 object VisualizationUtils {

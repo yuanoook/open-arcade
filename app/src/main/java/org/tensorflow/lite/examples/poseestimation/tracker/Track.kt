@@ -14,9 +14,9 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.tracker
+package com.r.openarcade.tracker
 
-import org.tensorflow.lite.examples.poseestimation.data.Person
+import com.r.openarcade.data.Person
 
 data class Track(
     val person: Person,

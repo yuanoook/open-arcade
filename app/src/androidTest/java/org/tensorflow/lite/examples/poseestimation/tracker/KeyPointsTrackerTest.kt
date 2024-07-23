@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.tracker
+package com.r.openarcade.tracker
 
 import android.graphics.PointF
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -23,9 +23,9 @@ import junit.framework.TestCase.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.tensorflow.lite.examples.poseestimation.data.BodyPart
-import org.tensorflow.lite.examples.poseestimation.data.KeyPoint
-import org.tensorflow.lite.examples.poseestimation.data.Person
+import com.r.openarcade.data.BodyPart
+import com.r.openarcade.data.KeyPoint
+import com.r.openarcade.data.Person
 import kotlin.math.exp
 import kotlin.math.pow
 

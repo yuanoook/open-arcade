@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.ml
+package com.r.openarcade.ml
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -24,8 +24,8 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.tensorflow.lite.examples.poseestimation.VisualizationUtils
-import org.tensorflow.lite.examples.poseestimation.data.Device
+import com.r.openarcade.VisualizationUtils
+import com.r.openarcade.data.Device
 
 /**
  * This test is used to visually verify detection results by the models.

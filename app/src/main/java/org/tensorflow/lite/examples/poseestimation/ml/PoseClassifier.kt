@@ -14,11 +14,11 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.ml
+package com.r.openarcade.ml
 
 import android.content.Context
 import org.tensorflow.lite.Interpreter
-import org.tensorflow.lite.examples.poseestimation.data.Person
+import com.r.openarcade.data.Person
 import org.tensorflow.lite.support.common.FileUtil
 
 class PoseClassifier(

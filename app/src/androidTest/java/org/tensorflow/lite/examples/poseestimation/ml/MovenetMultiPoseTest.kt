@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.ml
+package com.r.openarcade.ml
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -24,10 +24,10 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.tensorflow.lite.examples.poseestimation.data.BodyPart
-import org.tensorflow.lite.examples.poseestimation.data.Device
-import org.tensorflow.lite.examples.poseestimation.ml.MoveNetMultiPose
-import org.tensorflow.lite.examples.poseestimation.ml.Type
+import com.r.openarcade.data.BodyPart
+import com.r.openarcade.data.Device
+import com.r.openarcade.ml.MoveNetMultiPose
+import com.r.openarcade.ml.Type
 
 @RunWith(AndroidJUnit4::class)
 class MovenetMultiPoseTest {

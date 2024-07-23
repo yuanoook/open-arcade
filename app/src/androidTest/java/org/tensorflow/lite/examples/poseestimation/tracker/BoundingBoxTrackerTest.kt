@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.tracker
+package com.r.openarcade.tracker
 
 import android.graphics.RectF
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -22,7 +22,7 @@ import junit.framework.TestCase.assertEquals
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.tensorflow.lite.examples.poseestimation.data.Person
+import com.r.openarcade.data.Person
 
 @RunWith(AndroidJUnit4::class)
 class BoundingBoxTrackerTest {

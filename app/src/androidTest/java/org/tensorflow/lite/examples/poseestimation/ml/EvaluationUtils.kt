@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.ml
+package com.r.openarcade.ml
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -23,8 +23,8 @@ import android.graphics.PointF
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
-import org.tensorflow.lite.examples.poseestimation.data.BodyPart
-import org.tensorflow.lite.examples.poseestimation.data.Person
+import com.r.openarcade.data.BodyPart
+import com.r.openarcade.data.Person
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import kotlin.math.pow

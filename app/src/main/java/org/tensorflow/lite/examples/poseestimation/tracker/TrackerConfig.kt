@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.tracker
+package com.r.openarcade.tracker
 
 data class TrackerConfig(
     val maxTracks: Int = MAX_TRACKS,

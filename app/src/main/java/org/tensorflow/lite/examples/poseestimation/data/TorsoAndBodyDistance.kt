@@ -14,7 +14,7 @@ limitations under the License.
 ==============================================================================
 */
 
-package org.tensorflow.lite.examples.poseestimation.data
+package com.r.openarcade.data
 
 data class TorsoAndBodyDistance(
     val maxTorsoYDistance: Float,
