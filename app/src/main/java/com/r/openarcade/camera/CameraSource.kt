@@ -48,6 +48,9 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import android.graphics.PointF
 import com.r.openarcade.data.BodyPart
+import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.round
 import kotlin.math.sqrt
 
 
@@ -309,7 +312,7 @@ class CameraSource(
         visualize(persons, bitmap)
     }
 
-    private val HEAD_ROTATION_STABLIZER = 10;
+    private val HEAD_ROTATION_STABLIZER = 5;
 
     private val horizontalRotationValues = ArrayDeque<Float>(HEAD_ROTATION_STABLIZER)
     private val verticalRotationValues = ArrayDeque<Float>(HEAD_ROTATION_STABLIZER)
@@ -330,7 +333,10 @@ class CameraSource(
         val smoothHorizontalRotation = horizontalRotationValues.average().toFloat()
         val smoothVerticalRotation = verticalRotationValues.average().toFloat()
 
-        return Pair(smoothHorizontalRotation, smoothVerticalRotation)
+        return Pair(
+            round(smoothHorizontalRotation * 6) / 6,
+            round(smoothVerticalRotation * 3) / 3
+        )
     }
 
     private fun visualize(persons: List<Person>, bitmap: Bitmap) {
