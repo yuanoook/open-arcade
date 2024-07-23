@@ -137,7 +137,7 @@ class CameraSource(
                     listOf(
                         "TV:",
                         isTV.toString(),
-                        "FrontFace:",
+                        "FFace:",
                         isFrontFacing,
                         PREVIEW_WIDTH,
                         PREVIEW_HEIGHT
