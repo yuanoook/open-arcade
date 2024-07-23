@@ -22,14 +22,16 @@ import android.graphics.Color
 import android.graphics.Paint
 import com.r.openarcade.data.BodyPart
 import com.r.openarcade.data.Person
+import kotlin.math.abs
+import kotlin.math.min
 import kotlin.math.max
 
 object VisualizationUtils {
     /** Radius of circle used to draw keypoints.  */
-    private const val CIRCLE_RADIUS = 6f
+    private const val CIRCLE_RADIUS = 3f
 
     /** Width of line used to connected two keypoints.  */
-    private const val LINE_WIDTH = 4f
+    private const val LINE_WIDTH = 2f
 
     /** The text size of the person id that will be displayed when the tracker is available.  */
     private const val PERSON_ID_TEXT_SIZE = 30f
@@ -65,6 +67,8 @@ object VisualizationUtils {
         persons: List<Person>,
         isTrackerEnabled: Boolean = false
     ): Bitmap {
+        if (persons.isEmpty()) return input
+
         val paintCircle = Paint().apply {
             strokeWidth = CIRCLE_RADIUS
             color = Color.RED
@@ -116,5 +120,88 @@ object VisualizationUtils {
             }
         }
         return output
+    }
+
+    fun calculateHeadRotation(person: Person): Pair<Float, Float> {
+        val horizontalRotation = calculateHeadRotationHorizontal(person)
+        val verticalRotation = calculateHeadRotationVertical(person)
+        return Pair(horizontalRotation, verticalRotation)
+    }
+
+    fun drawHeadRotationLineOnBitmap(headRotation: Pair<Float, Float>, input: Bitmap): Bitmap {
+        val output = input.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(output)
+
+        // Create a paint object for the lines
+        val paint = Paint().apply {
+            color = 0xFF00FF00.toInt() // Green color in ARGB format
+            strokeWidth = 5f // Line thickness
+        }
+
+        // Calculate the x-coordinate for the vertical line based on horizontal head rotation
+        val x = output.width * headRotation.first
+
+        // Draw the vertical line on the bitmap
+        canvas.drawLine(x, 0f, x, output.height.toFloat(), paint)
+
+        // Calculate the y-coordinate for the horizontal line based on vertical head rotation
+        val y = output.height * headRotation.second
+
+        // Draw the horizontal line on the bitmap
+        canvas.drawLine(0f, y, output.width.toFloat(), y, paint)
+
+        return output
+    }
+
+    private fun calculateHeadRotationHorizontal(person: Person): Float {
+        val nose = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.NOSE }
+        val leftEar = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_EAR }
+        val rightEar = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_EAR }
+
+        if (nose == null || leftEar == null || rightEar == null) {
+            return 0.5f
+        }
+
+        val noseX = nose.coordinate.x
+        val leftEarX = leftEar.coordinate.x
+        val rightEarX = rightEar.coordinate.x
+
+        return when {
+            noseX <= rightEarX -> 0f
+            noseX >= leftEarX -> 1f
+            else -> betweenZeroAndOne((noseX - rightEarX) / (rightEarX - leftEarX), 1.5f)
+        }
+    }
+
+    private fun calculateHeadRotationVertical(person: Person): Float {
+        val nose = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.NOSE }
+        val leftEye = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_EYE }
+        val rightEye = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_EYE }
+        val leftEar = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_EAR }
+        val rightEar = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_EAR }
+
+        if (nose == null || leftEye == null || rightEye == null || leftEar == null || rightEar == null) {
+            return 0.5f
+        }
+
+        val noseY = nose.coordinate.y
+        val avgEyesY = (leftEye.coordinate.y + rightEye.coordinate.y) / 2
+        val avgEarsY = (leftEar.coordinate.y + rightEar.coordinate.y) / 2
+
+        return when {
+            avgEarsY <= avgEyesY -> 1f
+            avgEarsY >= noseY -> 0f
+            else -> betweenZeroAndOne((avgEarsY - noseY) / (avgEyesY - noseY), 1f)
+        }
+    }
+
+    private fun betweenZeroAndOne(value: Float, zoom: Float): Float {
+        return min(
+            (1).toFloat(),
+            max(
+                (0).toFloat(),
+                ((abs(value) - 0.5) * zoom + 0.5).toFloat()
+            )
+        )
     }
 }

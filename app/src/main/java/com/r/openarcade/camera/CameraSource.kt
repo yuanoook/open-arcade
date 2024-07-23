@@ -46,6 +46,9 @@ import com.r.openarcade.ml.TrackerType
 import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import android.graphics.PointF
+import com.r.openarcade.data.BodyPart
+import kotlin.math.sqrt
 
 
 class CameraSource(
@@ -56,26 +59,28 @@ class CameraSource(
     companion object {
         private const val MIN_CONFIDENCE = .4f
         private const val TAG = "Camera Source"
-
-        private fun getScreenWidth(context: Context): Int {
-            val displayMetrics = context.resources.displayMetrics
-            return displayMetrics.widthPixels
-        }
-
-        private fun getScreenHeight(context: Context): Int {
-            val displayMetrics = context.resources.displayMetrics
-            return displayMetrics.heightPixels
-        }
     }
 
-    private val PREVIEW_WIDTH: Int
-    private val PREVIEW_HEIGHT: Int
+    private val SCREEN_WIDTH: Int = surfaceView.context.resources.displayMetrics.widthPixels
+    private val SCREEN_HEIGHT: Int = surfaceView.context.resources.displayMetrics.heightPixels
 
-    init {
-        val context = surfaceView.context
-        PREVIEW_WIDTH = getScreenWidth(context)
-        PREVIEW_HEIGHT = getScreenHeight(context)
-    }
+// camera sizes - some example, take picture with wrong width and height will be problematic
+//        Width: 1920, Height: 1080 // good for TV
+//        Width: 1600, Height: 1200
+//        Width: 1600, Height: 720
+//        Width: 1440, Height: 1080
+//        Width: 1280, Height: 960
+//        Width: 1280, Height: 720 // good for TV
+//        Width: 960, Height: 720
+//        Width: 854, Height: 480
+//        Width: 800, Height: 600
+//        Width: 720, Height: 480
+//        Width: 640, Height: 480
+//        Width: 640, Height: 360 // good for TV
+
+    private val PREVIEW_WIDTH: Int = 1280
+    private val PREVIEW_HEIGHT: Int = 720
+
 
     private val lock = Any()
     private var detector: PoseDetector? = null
@@ -131,23 +136,10 @@ class CameraSource(
                 val context: Context = surfaceView.context
                 val isTV = isAndroidTV(context)
                 val rotateMatrix = Matrix()
-                val isFrontFacing = isFrontFacingCamera(cameraManager, cameraId)
-
-                listener?.onDebug(
-                    listOf(
-                        "TV:",
-                        isTV.toString(),
-                        "FFace:",
-                        isFrontFacing,
-                        PREVIEW_WIDTH,
-                        PREVIEW_HEIGHT
-                    )
-                )
-
                 if (isTV) {
                     rotateMatrix.postScale(-1.0f, 1.0f)
                 } else {
-//                    rotateMatrix.postRotate(90.0f)
+                   rotateMatrix.postRotate(90.0f)
                 }
 
                 val rotatedBitmap = Bitmap.createBitmap(
@@ -158,6 +150,9 @@ class CameraSource(
                 processImage(rotatedBitmap)
                 image.close()
             }
+
+
+            getCameraYUV420888Sizes(surfaceView.context, cameraId)
         }, imageReaderHandler)
 
         imageReader?.surface?.let { surface ->
@@ -178,10 +173,16 @@ class CameraSource(
         return uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
     }
 
-    private fun isFrontFacingCamera(cameraManager: CameraManager, cameraId: String): Boolean {
+    private fun getCameraYUV420888Sizes(context: Context, cameraId: String) {
+        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val characteristics = cameraManager.getCameraCharacteristics(cameraId)
-        val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
-        return facing == CameraCharacteristics.LENS_FACING_FRONT
+        val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+
+        map?.getOutputSizes(ImageFormat.YUV_420_888)?.let { sizes ->
+            for (size in sizes) {
+                println("Width: ${size.width}, Height: ${size.height}")
+            }
+        }
     }
 
     private suspend fun createSession(targets: List<Surface>): CameraCaptureSession =
@@ -292,8 +293,6 @@ class CameraSource(
     // process image
     private fun processImage(bitmap: Bitmap) {
         val persons = mutableListOf<Person>()
-        var classificationResult: List<Pair<String, Float>>? = null
-
         synchronized(lock) {
             detector?.estimatePoses(bitmap)?.let {
                 persons.addAll(it)
@@ -301,7 +300,6 @@ class CameraSource(
         }
         frameProcessedInOneSecondInterval++
         if (frameProcessedInOneSecondInterval == 1) {
-            // send fps to view
             listener?.onFPSListener(framesPerSecond)
         }
 
@@ -311,41 +309,91 @@ class CameraSource(
         visualize(persons, bitmap)
     }
 
-    private fun visualize(persons: List<Person>, bitmap: Bitmap) {
+    private val HEAD_ROTATION_STABLIZER = 10;
 
-        val outputBitmap = VisualizationUtils.drawBodyKeypoints(
-            bitmap,
-            persons.filter { it.score > MIN_CONFIDENCE }, isTrackerEnabled
-        )
+    private val horizontalRotationValues = ArrayDeque<Float>(HEAD_ROTATION_STABLIZER)
+    private val verticalRotationValues = ArrayDeque<Float>(HEAD_ROTATION_STABLIZER)
+
+    private fun getSmoothHeadRotation(person: Person): Pair<Float, Float> {
+        val (horizontalRotation, verticalRotation) = VisualizationUtils.calculateHeadRotation(person)
+
+        if (horizontalRotationValues.size == HEAD_ROTATION_STABLIZER) {
+            horizontalRotationValues.removeFirst()
+        }
+        if (verticalRotationValues.size == HEAD_ROTATION_STABLIZER) {
+            verticalRotationValues.removeFirst()
+        }
+
+        horizontalRotationValues.addLast(horizontalRotation)
+        verticalRotationValues.addLast(verticalRotation)
+
+        val smoothHorizontalRotation = horizontalRotationValues.average().toFloat()
+        val smoothVerticalRotation = verticalRotationValues.average().toFloat()
+
+        return Pair(smoothHorizontalRotation, smoothVerticalRotation)
+    }
+
+    private fun visualize(persons: List<Person>, bitmap: Bitmap) {
+        val keyPersons = persons.filter { it.score > MIN_CONFIDENCE }
+
+        var outputBitmap: Bitmap;
+        if (keyPersons.isNotEmpty()) {
+            outputBitmap = VisualizationUtils.drawBodyKeypoints(
+                bitmap,
+                keyPersons,
+                isTrackerEnabled
+            )
+
+            val headRotation = getSmoothHeadRotation(keyPersons[0])
+
+            listener?.onDebug(
+                listOf(
+                    SCREEN_WIDTH,
+                    SCREEN_HEIGHT,
+                    PREVIEW_WIDTH,
+                    PREVIEW_HEIGHT,
+                    headRotation
+                )
+            )
+
+            outputBitmap = VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
+        } else {
+            outputBitmap = bitmap
+        }
 
         val holder = surfaceView.holder
         val surfaceCanvas = holder.lockCanvas()
         surfaceCanvas?.let { canvas ->
-            val screenWidth: Int
-            val screenHeight: Int
-            val left: Int
-            val top: Int
+            val canvasWidth = canvas.width
+            val canvasHeight = canvas.height
 
-            if (canvas.height > canvas.width) {
-                val ratio = outputBitmap.height.toFloat() / outputBitmap.width
-                screenWidth = canvas.width
-                left = 0
-                screenHeight = (canvas.width * ratio).toInt()
-                top = (canvas.height - screenHeight) / 2
+            val bitmapWidth = outputBitmap.width
+            val bitmapHeight = outputBitmap.height
+
+            val canvasAspectRatio = canvasWidth.toFloat() / canvasHeight.toFloat()
+            val bitmapAspectRatio = bitmapWidth.toFloat() / bitmapHeight.toFloat()
+
+            val destRect: Rect
+
+            if (bitmapAspectRatio > canvasAspectRatio) {
+                // Bitmap is wider than canvas, scale by height
+                val scaledWidth = (canvasHeight * bitmapAspectRatio).toInt()
+                val left = (canvasWidth - scaledWidth) / 2
+                destRect = Rect(left, 0, left + scaledWidth, canvasHeight)
             } else {
-                val ratio = outputBitmap.width.toFloat() / outputBitmap.height
-                screenHeight = canvas.height
-                top = 0
-                screenWidth = (canvas.height * ratio).toInt()
-                left = (canvas.width - screenWidth) / 2
+                // Bitmap is taller than canvas, scale by width
+                val scaledHeight = (canvasWidth / bitmapAspectRatio).toInt()
+                val top = (canvasHeight - scaledHeight) / 2
+                destRect = Rect(0, top, canvasWidth, top + scaledHeight)
             }
-            val right: Int = left + screenWidth
-            val bottom: Int = top + screenHeight
 
             canvas.drawBitmap(
-                outputBitmap, Rect(0, 0, outputBitmap.width, outputBitmap.height),
-                Rect(left, top, right, bottom), null
+                outputBitmap,
+                Rect(0, 0, bitmapWidth, bitmapHeight),
+                destRect,
+                null
             )
+
             surfaceView.holder.unlockCanvasAndPost(canvas)
         }
     }
