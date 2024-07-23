@@ -54,12 +54,27 @@ class CameraSource(
 ) {
 
     companion object {
-        private const val PREVIEW_WIDTH = 640
-        private const val PREVIEW_HEIGHT = 480
-
-        /** Threshold for confidence score. */
-        private const val MIN_CONFIDENCE = .2f
+        private const val MIN_CONFIDENCE = .4f
         private const val TAG = "Camera Source"
+
+        private fun getScreenWidth(context: Context): Int {
+            val displayMetrics = context.resources.displayMetrics
+            return displayMetrics.widthPixels
+        }
+
+        private fun getScreenHeight(context: Context): Int {
+            val displayMetrics = context.resources.displayMetrics
+            return displayMetrics.heightPixels
+        }
+    }
+
+    private val PREVIEW_HEIGHT: Int
+    private val PREVIEW_HEIGHT: Int
+
+    init {
+        val context = surfaceView.context
+        PREVIEW_HEIGHT = getScreenWidth(context)
+        previewHeight = getScreenHeight(context)
     }
 
     private val lock = Any()
