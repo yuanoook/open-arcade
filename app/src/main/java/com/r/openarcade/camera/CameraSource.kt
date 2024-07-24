@@ -404,7 +404,35 @@ class CameraSource(
         }
     }
 
-    private var lastStokes: String = ""
+    private val lastStokes: MutableList<String> = mutableListOf()
+
+    private fun analysisStroke(keyPerson: Person) {
+        val strokeConfidence = 0.7
+        var horizontalStoke: String = ""
+        var isHorizontalStroke: Float = 0f
+        var verticalStoke: String = ""
+        var isVerticalStroke: Float = 0f
+
+        addWristPoint(keyPerson)
+
+        val stokeThreshold = VisualizationUtils.getStrokeThreshold(keyPerson.keyPoints)
+        if (leftWristPoints.size > 2) {
+            isHorizontalStroke =
+                VisualizationUtils.isHorizontalStrokeInList(leftWristPoints, stokeThreshold)
+            if (abs(isHorizontalStroke) > strokeConfidence) {
+                horizontalStoke = if (isHorizontalStroke > 0) "➡\uFE0F" else "⬅\uFE0F"
+                lastStokes.add(horizontalStoke)
+                VisualizationUtils.keepLastPoint(leftWristPoints)
+            }
+            isVerticalStroke =
+                VisualizationUtils.isVerticalStrokeInList(leftWristPoints, stokeThreshold)
+            if (abs(isVerticalStroke) > strokeConfidence) {
+                verticalStoke = if (isVerticalStroke > 0) "⬇\uFE0F" else "⬆\uFE0F"
+                lastStokes.add(verticalStoke)
+                VisualizationUtils.keepLastPoint(leftWristPoints)
+            }
+        }
+    }
 
     private fun drawBodyPointsAndInfo(
         keyPersons: List<Person>,
@@ -420,20 +448,7 @@ class CameraSource(
 
         val keyPerson = keyPersons[0]
 
-        val stokeThreshold = VisualizationUtils.getStrokeThreshold(keyPerson.keyPoints)
-
-        var verticalStoke: String = ""
-        var isHorizontalStroke: Float = 0f
-
-        addWristPoint(keyPerson)
-        if (leftWristPoints.size > 2) {
-            isHorizontalStroke = VisualizationUtils.isHorizontalStrokeInList(leftWristPoints, stokeThreshold)
-            if (abs(isHorizontalStroke) > 0.8) {
-                verticalStoke = if (isHorizontalStroke > 0) "-->>" else "<<--"
-                lastStokes += (" " + verticalStoke)
-                VisualizationUtils.keepLastPoint(leftWristPoints)
-            }
-        }
+        analysisStroke(keyPerson)
 
         val headRotation = getSmoothHeadRotation(keyPerson)
 
@@ -444,12 +459,12 @@ class CameraSource(
             PREVIEW_WIDTH,
             PREVIEW_HEIGHT,
             lastStokes,
-            isHorizontalStroke,
             headRotation
         )}
 
         return VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
     }
+
 
     private fun stopImageReaderThread() {
         imageReaderThread?.quitSafely()
