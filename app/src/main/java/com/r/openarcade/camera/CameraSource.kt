@@ -117,6 +117,7 @@ class CameraSource(
 
     /** [Handler] corresponding to [imageReaderThread] */
     private var imageReaderHandler: Handler? = null
+
     private var cameraId: String = ""
 
     suspend fun initCamera() {
@@ -139,10 +140,14 @@ class CameraSource(
                 val context: Context = surfaceView.context
                 val isTV = isAndroidTV(context)
                 val rotateMatrix = Matrix()
-                if (isTV) {
+                val isFrontFacing = getIsFrontFacing(cameraManager, cameraId)
+
+                if (isTV || isFrontFacing) {
                     rotateMatrix.postScale(-1.0f, 1.0f)
-                } else {
-                   rotateMatrix.postRotate(90.0f)
+                }
+
+                if (!isTV) {
+                    rotateMatrix.postRotate(90.0f)
                 }
 
                 val rotatedBitmap = Bitmap.createBitmap(
@@ -155,7 +160,7 @@ class CameraSource(
             }
 
 
-            getCameraYUV420888Sizes(surfaceView.context, cameraId)
+//            getCameraYUV420888Sizes(surfaceView.context, cameraId)
         }, imageReaderHandler)
 
         imageReader?.surface?.let { surface ->
@@ -169,6 +174,21 @@ class CameraSource(
                 session?.setRepeatingRequest(it, null, null)
             }
         }
+    }
+
+    private fun getIsFrontFacing(manager: CameraManager, cameraId: String): Boolean {
+        return manager.getCameraCharacteristics(cameraId).get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_FRONT
+    }
+
+    private fun tryGetFrontCameraId(manager: CameraManager): String {
+        for (cameraId in manager.cameraIdList) {
+            val characteristics = manager.getCameraCharacteristics(cameraId)
+            val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
+            if (facing != null && facing == CameraCharacteristics.LENS_FACING_FRONT) {
+                return cameraId
+            }
+        }
+        return manager.cameraIdList.first()
     }
 
     private fun isAndroidTV(context: Context): Boolean {
@@ -217,18 +237,7 @@ class CameraSource(
         }
 
     fun prepareCamera() {
-        for (cameraId in cameraManager.cameraIdList) {
-            val characteristics = cameraManager.getCameraCharacteristics(cameraId)
-
-            // We don't use a front facing camera in this sample.
-            val cameraDirection = characteristics.get(CameraCharacteristics.LENS_FACING)
-            if (cameraDirection != null &&
-                cameraDirection == CameraCharacteristics.LENS_FACING_FRONT
-            ) {
-                continue
-            }
-            this.cameraId = cameraId
-        }
+        this.cameraId = tryGetFrontCameraId(cameraManager)
     }
 
     fun setDetector(detector: PoseDetector) {
@@ -341,31 +350,7 @@ class CameraSource(
 
     private fun visualize(persons: List<Person>, bitmap: Bitmap) {
         val keyPersons = persons.filter { it.score > MIN_CONFIDENCE }
-
-        var outputBitmap: Bitmap;
-        if (keyPersons.isNotEmpty()) {
-            outputBitmap = VisualizationUtils.drawBodyKeypoints(
-                bitmap,
-                keyPersons,
-                isTrackerEnabled
-            )
-
-            val headRotation = getSmoothHeadRotation(keyPersons[0])
-
-            listener?.onDebug(
-                listOf(
-                    SCREEN_WIDTH,
-                    SCREEN_HEIGHT,
-                    PREVIEW_WIDTH,
-                    PREVIEW_HEIGHT,
-                    headRotation
-                )
-            )
-
-            outputBitmap = VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
-        } else {
-            outputBitmap = bitmap
-        }
+        val outputBitmap: Bitmap = drawBodyPointsAndInfo(keyPersons, bitmap)
 
         val holder = surfaceView.holder
         val surfaceCanvas = holder.lockCanvas()
@@ -404,6 +389,31 @@ class CameraSource(
         }
     }
 
+    private fun drawBodyPointsAndInfo(
+        keyPersons: List<Person>,
+        bitmap: Bitmap
+    ): Bitmap {
+        if (keyPersons.isEmpty()) return bitmap
+
+        val outputBitmap = VisualizationUtils.drawBodyKeypoints(
+            bitmap,
+            keyPersons,
+            isTrackerEnabled
+        )
+
+        val headRotation = getSmoothHeadRotation(keyPersons[0])
+
+        listener?.onDebug(
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            PREVIEW_WIDTH,
+            PREVIEW_HEIGHT,
+            headRotation
+        )
+
+        return VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
+    }
+
     private fun stopImageReaderThread() {
         imageReaderThread?.quitSafely()
         try {
@@ -420,6 +430,6 @@ class CameraSource(
 
         fun onDetectedInfo(personScore: Float?)
 
-        fun onDebug(info: List<Any>)
+        fun onDebug(vararg info: Any)
     }
 }

@@ -151,8 +151,8 @@ class MainActivity : AppCompatActivity() {
             ) {
                 tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
             }
-    
-            override fun onDebug(info: List<Any>) {
+
+            override fun onDebug(vararg info: Any) {
                 tvDebug.text = info.joinToString(separator = " ") { it.toString() }
             }
         }).apply {
