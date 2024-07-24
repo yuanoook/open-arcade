@@ -26,9 +26,11 @@ import com.r.openarcade.data.KeyPoint
 import com.r.openarcade.data.Person
 import java.util.LinkedList
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.max
 import kotlin.math.pow
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 object VisualizationUtils {
@@ -194,6 +196,20 @@ object VisualizationUtils {
     fun isVerticalStrokeInList(points: List<PointF>, threshold: Float): Float {
         val switchedPoints = points.map { PointF(it.y, it.x) }
         return isHorizontalStrokeInList(switchedPoints, threshold)
+    }
+
+    private fun rotatePoint(point: PointF, angle: Double): PointF {
+        val rad = Math.toRadians(angle)
+        val cosA = cos(rad)
+        val sinA = sin(rad)
+        val newX = point.x * cosA - point.y * sinA
+        val newY = point.x * sinA + point.y * cosA
+        return PointF(newX.toFloat(), newY.toFloat())
+    }
+
+    fun isDiagonalStrokeInList(points: List<PointF>, threshold: Float, angle: Double): Float {
+        val rotatedPoints = points.map { rotatePoint(it,  angle) }
+        return isHorizontalStrokeInList(rotatedPoints, threshold)
     }
 
     fun isHorizontalStrokeInList(points: List<PointF>, threshold: Float): Float {

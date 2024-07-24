@@ -412,6 +412,10 @@ class CameraSource(
         var isHorizontalStroke: Float = 0f
         var verticalStoke: String = ""
         var isVerticalStroke: Float = 0f
+        var diagonalStokeDownLeft: String = ""
+        var isDiagonalStrokeDownLeft: Float = 0f
+        var diagonalStokeUpLeft: String = ""
+        var isDiagonalStrokeUpLeft: Float = 0f
 
         addWristPoint(keyPerson)
 
@@ -423,6 +427,7 @@ class CameraSource(
                 horizontalStoke = if (isHorizontalStroke > 0) "➡\uFE0F" else "⬅\uFE0F"
                 lastStokes.add(horizontalStoke)
                 VisualizationUtils.keepLastPoint(leftWristPoints)
+                return
             }
             isVerticalStroke =
                 VisualizationUtils.isVerticalStrokeInList(leftWristPoints, stokeThreshold)
@@ -430,6 +435,19 @@ class CameraSource(
                 verticalStoke = if (isVerticalStroke > 0) "⬇\uFE0F" else "⬆\uFE0F"
                 lastStokes.add(verticalStoke)
                 VisualizationUtils.keepLastPoint(leftWristPoints)
+                return
+            }
+            isDiagonalStrokeDownLeft = VisualizationUtils.isDiagonalStrokeInList(leftWristPoints, stokeThreshold, -45.0)
+            if (abs(isDiagonalStrokeDownLeft) > strokeConfidence) {
+                diagonalStokeDownLeft = if (isDiagonalStrokeDownLeft > 0) "↘\uFE0F" else "↖\uFE0F"
+                lastStokes.add(diagonalStokeDownLeft)
+                return
+            }
+            isDiagonalStrokeUpLeft = VisualizationUtils.isDiagonalStrokeInList(leftWristPoints, stokeThreshold, 45.0)
+            if (abs(isDiagonalStrokeUpLeft) > strokeConfidence) {
+                diagonalStokeUpLeft = if (isDiagonalStrokeUpLeft > 0) "↗\uFE0F" else "↙\uFE0F"
+                lastStokes.add(diagonalStokeUpLeft)
+                return
             }
         }
     }
