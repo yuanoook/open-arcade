@@ -20,11 +20,14 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.PointF
 import com.r.openarcade.data.BodyPart
 import com.r.openarcade.data.Person
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.max
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 object VisualizationUtils {
     /** Radius of circle used to draw keypoints.  */
@@ -151,6 +154,81 @@ object VisualizationUtils {
         canvas.drawLine(0f, y, output.width.toFloat(), y, paint)
 
         return output
+    }
+
+    private fun isVerticalStrokeInList(points: List<PointF>, threshold: Float): Float {
+        val switchedPoints = points.map { PointF(it.y, it.x) }
+        return isHorizontalStrokeInList(switchedPoints, threshold)
+    }
+
+    private fun isHorizontalStrokeInList(points: List<PointF>, threshold: Float): Float {
+        if (points.size < 2) return 0f
+
+        val firstPoint = points.first()
+        val lastPoint = points.last()
+
+        if (points.size == 2) return isHorizontalStroke(firstPoint, lastPoint, threshold)
+
+        val averagePoint = getAveragePointF(points);
+
+        var yVariation: Float = 1f
+        for (point in points) {
+            if (point == firstPoint || point == lastPoint) continue
+            val yScore = getStrokeYScore(point, averagePoint, threshold)
+            yVariation *= yScore;
+        }
+        yVariation = yVariation.pow((1.0 / (points.size - 2)).toFloat())
+
+        return yVariation * isHorizontalStroke(firstPoint, lastPoint, threshold)
+    }
+
+    private fun isHorizontalStroke(old: PointF, new: PointF, threshold: Float): Float {
+        val xScore = getStrokeXScore(old, new, threshold)
+        val yScore = getStrokeYScore(old, new, threshold)
+        val direction = if (new.y > old.y) 1 else -1
+
+        return direction * sqrt(xScore * yScore)
+    }
+
+    private fun isVerticalStroke(old: PointF, new: PointF, threshold: Float): Float {
+        // Switch x and y coordinates and call isHorizontalStroke
+        val oldSwitched = PointF(old.y, old.x)
+        val newSwitched = PointF(new.y, new.x)
+        return isHorizontalStroke(oldSwitched, newSwitched, threshold)
+    }
+
+    private fun getAveragePointF(points: List<PointF>): PointF {
+        if (points.isEmpty()) return PointF(0f, 0f)
+
+        val sumX = points.sumOf { it.x.toDouble() }
+        val sumY = points.sumOf { it.y.toDouble() }
+
+        val avgX = sumX / points.size
+        val avgY = sumY / points.size
+
+        return PointF(avgX.toFloat(), avgY.toFloat())
+    }
+
+    private fun getStrokeXScore(old: PointF, new: PointF, threshold: Float): Float {
+        val xDistance = abs(new.x - old.x)
+        val xScore = when {
+            xDistance < threshold * 0.5f -> 0f
+            xDistance < threshold -> (xDistance - threshold * 0.5f) / threshold
+            xDistance < threshold * 2 -> (xDistance - threshold) / (threshold * 2f) + 0.5f
+            else -> 1f
+        }
+        return xScore
+    }
+
+    private fun getStrokeYScore(old: PointF, new: PointF, threshold: Float): Float {
+        val yDistance = abs(new.y - old.y)
+        val yScore = when {
+            yDistance > threshold / 3 -> 0f
+            yDistance > threshold / 4 -> abs(yDistance - threshold / 3) / (threshold / 3 - threshold / 4)
+            yDistance > threshold / 5 -> abs(yDistance - threshold / 4) / (threshold / 4 - threshold / 5) + 0.5f
+            else -> 1f
+        }
+        return yScore
     }
 
     private fun calculateHeadRotationHorizontal(person: Person): Float {
