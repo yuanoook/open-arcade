@@ -22,7 +22,9 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import com.r.openarcade.data.BodyPart
+import com.r.openarcade.data.KeyPoint
 import com.r.openarcade.data.Person
+import java.util.LinkedList
 import kotlin.math.abs
 import kotlin.math.min
 import kotlin.math.max
@@ -156,12 +158,45 @@ object VisualizationUtils {
         return output
     }
 
-    private fun isVerticalStrokeInList(points: List<PointF>, threshold: Float): Float {
+    private fun calculateDistance(point1: PointF, point2: PointF): Float {
+        val dx = point1.x - point2.x
+        val dy = point1.y - point2.y
+        return sqrt(dx * dx + dy * dy)
+    }
+
+    fun keepLastPoint(list: LinkedList<PointF>) {
+        if (list.size > 1) {
+            val lastItem = list.last()
+            list.clear()
+            list.add(lastItem)
+        }
+    }
+
+    fun getStrokeThreshold(keyPoints: List<KeyPoint>): Float {
+        val leftShoulder = keyPoints.find { it.bodyPart == BodyPart.LEFT_SHOULDER }?.coordinate
+        val rightShoulder = keyPoints.find { it.bodyPart == BodyPart.RIGHT_SHOULDER }?.coordinate
+        val leftElbow = keyPoints.find { it.bodyPart == BodyPart.LEFT_ELBOW }?.coordinate
+        val rightElbow = keyPoints.find { it.bodyPart == BodyPart.RIGHT_ELBOW }?.coordinate
+        val leftWrist = keyPoints.find { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
+        val rightWrist = keyPoints.find { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
+
+        val distances = listOf(
+            calculateDistance(leftShoulder!!, leftElbow!!),
+            calculateDistance(rightShoulder!!, rightElbow!!),
+            calculateDistance(leftElbow, leftWrist!!),
+            calculateDistance(rightElbow, rightWrist!!),
+            calculateDistance(leftShoulder, rightShoulder)
+        )
+
+        return distances.average().toFloat()
+    }
+
+    fun isVerticalStrokeInList(points: List<PointF>, threshold: Float): Float {
         val switchedPoints = points.map { PointF(it.y, it.x) }
         return isHorizontalStrokeInList(switchedPoints, threshold)
     }
 
-    private fun isHorizontalStrokeInList(points: List<PointF>, threshold: Float): Float {
+    fun isHorizontalStrokeInList(points: List<PointF>, threshold: Float): Float {
         if (points.size < 2) return 0f
 
         val firstPoint = points.first()
@@ -185,7 +220,7 @@ object VisualizationUtils {
     private fun isHorizontalStroke(old: PointF, new: PointF, threshold: Float): Float {
         val xScore = getStrokeXScore(old, new, threshold)
         val yScore = getStrokeYScore(old, new, threshold)
-        val direction = if (new.y > old.y) 1 else -1
+        val direction = if (new.x > old.x) 1 else -1
 
         return direction * sqrt(xScore * yScore)
     }

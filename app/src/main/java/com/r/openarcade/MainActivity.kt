@@ -1,6 +1,7 @@
 package com.r.openarcade
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.app.Dialog
 import android.content.pm.PackageManager
@@ -152,8 +153,21 @@ class MainActivity : AppCompatActivity() {
                 tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
             }
 
+            @SuppressLint("DefaultLocale")
             override fun onDebug(vararg info: Any) {
-                tvDebug.text = info.joinToString(separator = " ") { it.toString() }
+                tvDebug.text = info.joinToString(separator = " ") {
+                    when (it) {
+                        is Float -> String.format("%.2f", it)
+                        is Pair<*, *> -> {
+                            if (it.first is Float && it.second is Float) {
+                                String.format("(%.2f, %.2f)", it.first as Float, it.second as Float)
+                            } else {
+                                it.toString()
+                            }
+                        }
+                        else -> it.toString()
+                    }
+                }
             }
         }).apply {
             prepareCamera()

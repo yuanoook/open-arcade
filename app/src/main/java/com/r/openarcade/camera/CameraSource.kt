@@ -47,7 +47,9 @@ import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import android.graphics.PointF
+import android.os.Looper
 import com.r.openarcade.data.BodyPart
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.round
@@ -389,6 +391,21 @@ class CameraSource(
         }
     }
 
+    private val leftWristPoints = LinkedList<PointF>()
+
+    private fun addWristPoint(keyPerson: Person) {
+        val leftWristPoint =
+            keyPerson.keyPoints.find { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
+        leftWristPoint?.let {
+            if (leftWristPoints.size >= 5) {
+                leftWristPoints.removeFirst()
+            }
+            leftWristPoints.add(it)
+        }
+    }
+
+    private var lastStokes: String = ""
+
     private fun drawBodyPointsAndInfo(
         keyPersons: List<Person>,
         bitmap: Bitmap
@@ -401,15 +418,35 @@ class CameraSource(
             isTrackerEnabled
         )
 
-        val headRotation = getSmoothHeadRotation(keyPersons[0])
+        val keyPerson = keyPersons[0]
 
-        listener?.onDebug(
+        val stokeThreshold = VisualizationUtils.getStrokeThreshold(keyPerson.keyPoints)
+
+        var verticalStoke: String = ""
+        var isHorizontalStroke: Float = 0f
+
+        addWristPoint(keyPerson)
+        if (leftWristPoints.size > 2) {
+            isHorizontalStroke = VisualizationUtils.isHorizontalStrokeInList(leftWristPoints, stokeThreshold)
+            if (abs(isHorizontalStroke) > 0.8) {
+                verticalStoke = if (isHorizontalStroke > 0) "-->>" else "<<--"
+                lastStokes += (" " + verticalStoke)
+                VisualizationUtils.keepLastPoint(leftWristPoints)
+            }
+        }
+
+        val headRotation = getSmoothHeadRotation(keyPerson)
+
+        Handler(Looper.getMainLooper()).post {
+            listener?.onDebug(
             SCREEN_WIDTH,
             SCREEN_HEIGHT,
             PREVIEW_WIDTH,
             PREVIEW_HEIGHT,
+            lastStokes,
+            isHorizontalStroke,
             headRotation
-        )
+        )}
 
         return VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
     }
