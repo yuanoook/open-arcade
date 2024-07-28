@@ -431,17 +431,22 @@ object VisualizationUtils {
         }
 
         fun drawHistory(history: List<PointF>, paint: Paint) {
-            val sizeStep = 5f / history.size
-            for (i in history.indices) {
-                val point = history[i]
-                val size = 10f + i * sizeStep
-                canvas.drawCircle(point.x, point.y, size, paint)
+            if (history.isEmpty()) return
 
-                if (i > 0) {
-                    val prevPoint = history[i - 1]
-                    linePaint.strokeWidth = size
+            var currentSize = 40f // Start with the largest size for the last point
+            for (i in history.indices.reversed()) {
+                val point = history[i]
+
+                if (i < history.size - 1) {
+                    val prevPoint = history[i + 1]
+                    linePaint.strokeWidth = currentSize
                     canvas.drawLine(prevPoint.x, prevPoint.y, point.x, point.y, linePaint)
                 }
+
+                canvas.drawCircle(point.x, point.y, currentSize, paint)
+
+                // Calculate the next size, ensuring it does not go below 1
+                currentSize = max(currentSize / 1.5f, 1f)
             }
         }
 

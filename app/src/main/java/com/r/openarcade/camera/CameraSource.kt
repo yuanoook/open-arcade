@@ -480,8 +480,7 @@ class CameraSource(
 
         keepWristTrace(keyPerson)
         outputBitmap = VisualizationUtils.drawPianoKeys(outputBitmap, triggeredKeys)
-
-        VisualizationUtils.drawHandTrace(outputBitmap, leftWristTrace, rightWristTrace)
+        outputBitmap = VisualizationUtils.drawHandTrace(outputBitmap, leftWristTrace, rightWristTrace)
 
         val headRotation = getSmoothHeadRotation(keyPerson)
 
@@ -499,7 +498,7 @@ class CameraSource(
 
     private val leftWristTrace = mutableListOf<PointF>()
     private val rightWristTrace = mutableListOf<PointF>()
-    private val maxWristTraceSize = 20 // Maximum number of history points to keep
+    private val maxWristTraceSize = 7 // Maximum number of history points to keep
 
     private fun keepWristTrace(person: Person) {
         val leftWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
@@ -519,84 +518,52 @@ class CameraSource(
     }
 
 
-    private val previousLeftWristY = mutableListOf<Float>()
-    private val previousRightWristY = mutableListOf<Float>()
+    private val previousLeftWristPoints = mutableListOf<PointF>()
+    private val previousRightWristPoints = mutableListOf<PointF>()
     private val maxHistorySize = 4
 
     private fun playPiano(person: Person) {
-        val halfScreenHeight = PREVIEW_HEIGHT / 2
-        val minDistance = PREVIEW_HEIGHT / 6
-
         val leftWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
         val rightWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
+        checkAndPlayKey(previousLeftWristPoints, leftWrist)
+        checkAndPlayKey(previousRightWristPoints, rightWrist)
+    }
 
-        listener?.onDebug(
-//            SCREEN_WIDTH,
-//            SCREEN_HEIGHT,
-//            PREVIEW_WIDTH,
-//            PREVIEW_HEIGHT,
-//            lastStokes,
-            halfScreenHeight,
-            minDistance,
-            leftWrist?.y!!,
-            rightWrist?.y!!
-        )
+    private fun checkAndPlayKey(
+        prevPoints: MutableList<PointF>,
+        currPoint: PointF?
+    ) {
+        val halfScreenHeight = PREVIEW_HEIGHT / 2f
+        val minDistance = PREVIEW_HEIGHT / 6f
+        val keyWidth = PREVIEW_WIDTH / 7f
 
-        leftWrist?.let {
+        currPoint?.let {
             val currY = it.y
+
             if (currY > halfScreenHeight) {
-                for (prevY in previousLeftWristY) {
-                    if (
-                            isValidKeyPosition(it.x) &&
-                            (prevY <= halfScreenHeight &&
-                            (currY - prevY) > minDistance)
-                        ) {
-                        playKey(it.x)
-                        previousLeftWristY.clear()
-                        break
+                val iterator = prevPoints.iterator()
+                while (iterator.hasNext()) {
+                    val prevPoint = iterator.next()
+                    if (prevPoint.y <= halfScreenHeight && (currY - prevPoint.y) > minDistance) {
+                        for (keyIndex in 0 until 7) {
+                            if (isValidKeyPosition(prevPoint, it, keyIndex, keyWidth)) {
+                                playKey(keyIndex)
+                                prevPoints.clear()
+                                return
+                            }
+                        }
                     }
                 }
             }
-            previousLeftWristY.add(currY)
-            if (previousLeftWristY.size > maxHistorySize) {
-                previousLeftWristY.removeAt(0)
-            }
-        }
 
-        rightWrist?.let {
-            val currY = it.y
-            if (currY > halfScreenHeight) {
-                for (prevY in previousRightWristY) {
-                    if (
-                            isValidKeyPosition(it.x) &&
-                            (prevY <= halfScreenHeight &&
-                            (currY - prevY) > minDistance)
-                        ) {
-                        playKey(it.x)
-                        previousRightWristY.clear()
-                        break
-                    }
-                }
-            }
-            previousRightWristY.add(currY)
-            if (previousRightWristY.size > maxHistorySize) {
-                previousRightWristY.removeAt(0)
+            prevPoints.add(it)
+            if (prevPoints.size > maxHistorySize) {
+                prevPoints.removeAt(0)
             }
         }
     }
 
-    private fun isValidKeyPosition(x: Float): Boolean {
-        val keyWidth = PREVIEW_WIDTH / 7
-        val positionInKey = x % keyWidth
-        return positionInKey >= 20 && positionInKey <= (keyWidth - 10)
-    }
-
-    private fun playKey(x: Float) {
-        val screenWidth = PREVIEW_WIDTH
-        val keyWidth = screenWidth / 7
-
-        val keyIndex = (x / keyWidth).toInt()
-
+    private fun playKey(keyIndex: Int) {
         val soundFile = when (keyIndex) {
             0 -> R.raw.c4
             1 -> R.raw.d4
@@ -616,6 +583,27 @@ class CameraSource(
             }, 500)
         }
     }
+
+    private fun isValidKeyPosition(prevPoint: PointF, currPoint: PointF, keyIndex: Int, keyWidth: Float): Boolean {
+        val keyLeftBound = keyWidth * keyIndex + 20
+        val keyRightBound = keyWidth * (keyIndex + 1) - 10
+
+        // Define the horizontal line segment for the key
+        val horizontalLineStart = PointF(keyLeftBound, PREVIEW_HEIGHT.toFloat() / 2)
+        val horizontalLineEnd = PointF(keyRightBound, PREVIEW_HEIGHT.toFloat() / 2)
+
+        // Check intersection with the horizontal line of the key section
+        return linesIntersect(prevPoint, currPoint, horizontalLineStart, horizontalLineEnd)
+    }
+
+    private fun linesIntersect(p1: PointF, p2: PointF, p3: PointF, p4: PointF): Boolean {
+        val denom = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y)
+        if (denom == 0f) return false // Parallel lines
+        val ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denom
+        val ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denom
+        return ua in 0f..1f && ub in 0f..1f
+    }
+
 
     private fun stopImageReaderThread() {
         imageReaderThread?.quitSafely()
