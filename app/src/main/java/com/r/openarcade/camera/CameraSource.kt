@@ -507,11 +507,11 @@ class CameraSource(
         val rightWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
 
         listener?.onDebug(
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
-            PREVIEW_WIDTH,
-            PREVIEW_HEIGHT,
-            lastStokes,
+//            SCREEN_WIDTH,
+//            SCREEN_HEIGHT,
+//            PREVIEW_WIDTH,
+//            PREVIEW_HEIGHT,
+//            lastStokes,
             halfScreenHeight,
             minDistance,
             leftWrist?.y!!,
@@ -522,7 +522,11 @@ class CameraSource(
             val currY = it.y
             if (currY > halfScreenHeight) {
                 for (prevY in previousLeftWristY) {
-                    if (isValidKeyPosition(it.x) && ((currY - prevY) > minDistance)) {
+                    if (
+                            isValidKeyPosition(it.x) &&
+                            (prevY <= halfScreenHeight &&
+                            (currY - prevY) > minDistance)
+                        ) {
                         playKey(it.x)
                         previousLeftWristY.clear()
                         break
@@ -539,7 +543,11 @@ class CameraSource(
             val currY = it.y
             if (currY > halfScreenHeight) {
                 for (prevY in previousRightWristY) {
-                    if (isValidKeyPosition(it.x) &&(currY - prevY) > minDistance) {
+                    if (
+                            isValidKeyPosition(it.x) &&
+                            (prevY <= halfScreenHeight &&
+                            (currY - prevY) > minDistance)
+                        ) {
                         playKey(it.x)
                         previousRightWristY.clear()
                         break
@@ -581,7 +589,7 @@ class CameraSource(
             triggeredKeys.add(keyIndex)
             handler.postDelayed({
                 triggeredKeys.remove(keyIndex)
-            }, 300)
+            }, 500)
         }
     }
 

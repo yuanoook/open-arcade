@@ -22,6 +22,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.Rect
+import android.graphics.RectF
 import com.r.openarcade.data.BodyPart
 import com.r.openarcade.data.KeyPoint
 import com.r.openarcade.data.Person
@@ -349,49 +350,58 @@ object VisualizationUtils {
             Color.parseColor("#8B00FF")  // Violet
         )
 
-        val triggeredPaint = Paint().apply {
-            color = Color.YELLOW
-            alpha = 192
-            style = Paint.Style.FILL
-        }
-
         val textPaint = Paint().apply {
             color = Color.WHITE
-            alpha = 192
+//            alpha = 192
             textSize = 40f
+            textAlign = Paint.Align.CENTER
+        }
+
+        var triggeredTextPaint = Paint().apply {
+            color = Color.WHITE
+            textSize = 54f
             textAlign = Paint.Align.CENTER
         }
 
         val screenWidth = outputBitmap.width
         val screenHeight = outputBitmap.height
+        val cornerRadius = 20f // Radius for the rounded corners
+
         val keyWidth = screenWidth / 7
         val defaultKeyHeight = 80 // Height of the piano keys
         val triggeredKeyHeight = 120 // Height of the triggered piano keys
         val noteNames = arrayOf("C - Do", "D - Re", "E - Mi", "F - Fa", "G - Sol", "A - La", "B - Si")
 
         for (i in 0 until 7) {
-            val paint = Paint().apply {
+            val fillPaint = Paint().apply {
                 color = rainbowColors[i]
-                alpha = if (i in triggeredKeys) 192 else 64 // Set alpha to 75% opaque if triggered, else 50% transparent
+                alpha = if (i in triggeredKeys) 128 else 32 // Set alpha to 75% opaque if triggered, else 50% transparent
                 style = Paint.Style.FILL
+            }
+            val borderPaint = Paint().apply {
+                color = rainbowColors[i]
+                style = Paint.Style.STROKE
+                strokeWidth = 5f
+                alpha = if (i in triggeredKeys) 255 else 192 // Set alpha to 100% opaque if triggered, else 0% transparent
             }
 
 
-            val left = i * keyWidth
-            val right = left + keyWidth - 10
+            val left = i * keyWidth + 20
+            val right = left + keyWidth - 30
             val keyHeight = if (i in triggeredKeys) triggeredKeyHeight else defaultKeyHeight
-            val rect = Rect(
-                left + 20,
-                (screenHeight - keyHeight) / 2,
-                right,
-                (screenHeight + keyHeight) / 2)
+            val rect = RectF(
+                left.toFloat(),
+                (screenHeight - keyHeight) / 2f,
+                right.toFloat(),
+                (screenHeight + keyHeight) / 2f)
 
-            canvas.drawRect(rect, paint)
+            canvas.drawRoundRect(rect, cornerRadius, cornerRadius, fillPaint)
+            canvas.drawRoundRect(rect, cornerRadius, cornerRadius, borderPaint)
             canvas.drawText(
                 noteNames[i],
                 (left + right) / 2f,
-                screenHeight / 2f,
-                textPaint)
+                screenHeight / 2f + 10f,
+                if (i in triggeredKeys) triggeredTextPaint else textPaint)
         }
 
         return outputBitmap
