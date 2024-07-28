@@ -47,7 +47,9 @@ import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import android.graphics.PointF
+import android.media.MediaPlayer
 import android.os.Looper
+import com.r.openarcade.R
 import com.r.openarcade.data.BodyPart
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -86,6 +88,8 @@ class CameraSource(
     private val PREVIEW_WIDTH: Int = 1280
     private val PREVIEW_HEIGHT: Int = 720
 
+    private val context: Context = surfaceView.context
+    private val mediaPlayerPool = MediaPlayerPool(context, 10)
 
     private val lock = Any()
     private var detector: PoseDetector? = null
@@ -467,22 +471,101 @@ class CameraSource(
         val keyPerson = keyPersons[0]
 
         analysisStroke(keyPerson)
+        playPiano(keyPerson)
 
         val headRotation = getSmoothHeadRotation(keyPerson)
 
-        Handler(Looper.getMainLooper()).post {
-            listener?.onDebug(
+//        listener?.onDebug(
+//            SCREEN_WIDTH,
+//            SCREEN_HEIGHT,
+//            PREVIEW_WIDTH,
+//            PREVIEW_HEIGHT,
+//            lastStokes,
+//            headRotation
+//        )
+
+        return VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
+    }
+
+    private val previousLeftWristY = mutableListOf<Float>()
+    private val previousRightWristY = mutableListOf<Float>()
+    private val maxHistorySize = 4
+
+    private fun playPiano(person: Person) {
+        val halfScreenHeight = PREVIEW_HEIGHT / 2
+        val minDistance = PREVIEW_HEIGHT / 5
+
+        val leftWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
+        val rightWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
+
+        listener?.onDebug(
             SCREEN_WIDTH,
             SCREEN_HEIGHT,
             PREVIEW_WIDTH,
             PREVIEW_HEIGHT,
             lastStokes,
-            headRotation
-        )}
+            halfScreenHeight,
+            minDistance,
+            leftWrist?.y!!,
+            rightWrist?.y!!
+        )
 
-        return VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
+        leftWrist?.let {
+            val currY = it.y
+            if (currY > halfScreenHeight) {
+                for (prevY in previousLeftWristY) {
+                    if ((currY - prevY) > minDistance) {
+                        playKey(it.x)
+                        previousLeftWristY.clear()
+                        break
+                    }
+                }
+            }
+            previousLeftWristY.add(currY)
+            if (previousLeftWristY.size > maxHistorySize) {
+                previousLeftWristY.removeAt(0)
+            }
+        }
+
+        rightWrist?.let {
+            val currY = it.y
+            if (currY > halfScreenHeight) {
+                for (prevY in previousRightWristY) {
+                    if ((currY - prevY) > minDistance) {
+                        playKey(it.x)
+                        previousRightWristY.clear()
+                        break
+                    }
+                }
+            }
+            previousRightWristY.add(currY)
+            if (previousRightWristY.size > maxHistorySize) {
+                previousRightWristY.removeAt(0)
+            }
+        }
     }
 
+    private fun playKey(x: Float) {
+        val screenWidth = surfaceView.width
+        val keyWidth = screenWidth / 7
+
+        val keyIndex = (x / keyWidth).toInt()
+
+        val soundFile = when (keyIndex) {
+            0 -> R.raw.c1
+            1 -> R.raw.c2
+            2 -> R.raw.c3
+            3 -> R.raw.c4
+            4 -> R.raw.c5
+            5 -> R.raw.c6
+            6 -> R.raw.c7
+            else -> null
+        }
+
+        soundFile?.let {
+            mediaPlayerPool.playSound(it)
+        }
+    }
 
     private fun stopImageReaderThread() {
         imageReaderThread?.quitSafely()

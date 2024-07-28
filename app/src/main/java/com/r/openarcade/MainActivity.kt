@@ -6,6 +6,8 @@ import android.app.AlertDialog
 import android.app.Dialog
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.Process
 import android.view.SurfaceView
 import android.view.View
@@ -144,28 +146,34 @@ class MainActivity : AppCompatActivity() {
     private fun initializeCameraSource() {
         cameraSource = CameraSource(surfaceView, object : CameraSource.CameraSourceListener {
             override fun onFPSListener(fps: Int) {
-                tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
+                Handler(Looper.getMainLooper()).post {
+                    tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
+                }
             }
     
             override fun onDetectedInfo(
                 personScore: Float?
             ) {
-                tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
+                Handler(Looper.getMainLooper()).post {
+                    tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
+                }
             }
 
             @SuppressLint("DefaultLocale")
             override fun onDebug(vararg info: Any) {
-                tvDebug.text = info.joinToString(separator = " ") {
-                    when (it) {
-                        is Float -> String.format("%.2f", it)
-                        is Pair<*, *> -> {
-                            if (it.first is Float && it.second is Float) {
-                                String.format("(%.2f, %.2f)", it.first as Float, it.second as Float)
-                            } else {
-                                it.toString()
+                Handler(Looper.getMainLooper()).post {
+                    tvDebug.text = info.joinToString(separator = " ") {
+                        when (it) {
+                            is Float -> String.format("%.2f", it)
+                            is Pair<*, *> -> {
+                                if (it.first is Float && it.second is Float) {
+                                    String.format("(%.2f, %.2f)", it.first as Float, it.second as Float)
+                                } else {
+                                    it.toString()
+                                }
                             }
+                            else -> it.toString()
                         }
-                        else -> it.toString()
                     }
                 }
             }
