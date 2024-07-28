@@ -477,9 +477,11 @@ class CameraSource(
         )
 
         playPiano(keyPerson)
+
+        keepWristTrace(keyPerson)
         outputBitmap = VisualizationUtils.drawPianoKeys(outputBitmap, triggeredKeys)
 
-
+        VisualizationUtils.drawHandTrace(outputBitmap, leftWristTrace, rightWristTrace)
 
         val headRotation = getSmoothHeadRotation(keyPerson)
 
@@ -494,6 +496,28 @@ class CameraSource(
 
         return VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
     }
+
+    private val leftWristTrace = mutableListOf<PointF>()
+    private val rightWristTrace = mutableListOf<PointF>()
+    private val maxWristTraceSize = 20 // Maximum number of history points to keep
+
+    private fun keepWristTrace(person: Person) {
+        val leftWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
+        val rightWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
+        leftWrist?.let {
+            leftWristTrace.add(it)
+            if (leftWristTrace.size > maxWristTraceSize) {
+                leftWristTrace.removeAt(0)
+            }
+        }
+        rightWrist?.let {
+            rightWristTrace.add(it)
+            if (rightWristTrace.size > maxWristTraceSize) {
+                rightWristTrace.removeAt(0)
+            }
+        }
+    }
+
 
     private val previousLeftWristY = mutableListOf<Float>()
     private val previousRightWristY = mutableListOf<Float>()

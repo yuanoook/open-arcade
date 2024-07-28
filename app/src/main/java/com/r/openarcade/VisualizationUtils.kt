@@ -406,4 +406,48 @@ object VisualizationUtils {
 
         return outputBitmap
     }
+
+    fun drawHandTrace(
+        bitmap: Bitmap,
+        leftWristHistory: List<PointF>,
+        rightWristHistory: List<PointF>
+    ): Bitmap {
+        val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(outputBitmap)
+
+        val leftWristPaint = Paint().apply {
+            color = Color.BLUE
+            style = Paint.Style.FILL
+        }
+
+        val rightWristPaint = Paint().apply {
+            color = Color.RED
+            style = Paint.Style.FILL
+        }
+
+        val linePaint = Paint().apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+        }
+
+        fun drawHistory(history: List<PointF>, paint: Paint) {
+            val sizeStep = 5f / history.size
+            for (i in history.indices) {
+                val point = history[i]
+                val size = 10f + i * sizeStep
+                canvas.drawCircle(point.x, point.y, size, paint)
+
+                if (i > 0) {
+                    val prevPoint = history[i - 1]
+                    linePaint.strokeWidth = size
+                    canvas.drawLine(prevPoint.x, prevPoint.y, point.x, point.y, linePaint)
+                }
+            }
+        }
+
+        drawHistory(leftWristHistory, leftWristPaint)
+        drawHistory(rightWristHistory, rightWristPaint)
+
+        return outputBitmap
+    }
 }
