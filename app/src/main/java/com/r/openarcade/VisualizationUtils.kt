@@ -336,7 +336,7 @@ object VisualizationUtils {
         )
     }
 
-    fun drawPianoKeys(bitmap: Bitmap, triggeredKeys: MutableSet<Int>): Bitmap {
+    fun drawPianoKeys(bitmap: Bitmap, triggeredKeys: MutableSet<Int>, noteHints: List<Pair<Int, Int>>): Bitmap {
         val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(outputBitmap)
 
@@ -354,6 +354,12 @@ object VisualizationUtils {
             color = Color.WHITE
 //            alpha = 192
             textSize = 40f
+            textAlign = Paint.Align.CENTER
+        }
+
+        val notePaint = Paint().apply {
+            color = Color.RED
+            textSize = 80f
             textAlign = Paint.Align.CENTER
         }
 
@@ -402,6 +408,16 @@ object VisualizationUtils {
                 (left + right) / 2f,
                 screenHeight / 2f + 10f,
                 if (i in triggeredKeys) triggeredTextPaint else textPaint)
+
+            // Draw the note hint indexes with vertical spacing
+            noteHints.filter { it.first == i + 1 }.forEachIndexed { index, hint ->
+                canvas.drawText(
+                    (hint.second + 1).toString(),
+                    (left + right) / 2f,
+                    screenHeight / 4f + (index * 80),
+                    notePaint
+                )
+            }
         }
 
         return outputBitmap

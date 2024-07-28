@@ -479,7 +479,7 @@ class CameraSource(
         playPiano(keyPerson)
 
         keepWristTrace(keyPerson)
-        outputBitmap = VisualizationUtils.drawPianoKeys(outputBitmap, triggeredKeys)
+        outputBitmap = VisualizationUtils.drawPianoKeys(outputBitmap, triggeredKeys, getCurrentNoteGroup())
         outputBitmap = VisualizationUtils.drawHandTrace(outputBitmap, leftWristTrace, rightWristTrace)
 
         val headRotation = getSmoothHeadRotation(keyPerson)
@@ -563,6 +563,23 @@ class CameraSource(
         }
     }
 
+    private val musicNotes = listOf(
+        1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0,
+        5, 5, 4, 4, 3, 3, 2, 0, 5, 5, 4, 4, 3, 3, 2, 0,
+        1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0
+    )
+
+    private var currentNoteIndex = 0
+    private val noteHintSize = 4
+
+    private fun getCurrentNoteGroup(): List<Pair<Int, Int>> {
+        val groupStartIndex = (currentNoteIndex / noteHintSize) * noteHintSize
+        val endIndex = (groupStartIndex + noteHintSize).coerceAtMost(musicNotes.size)
+        return musicNotes.subList(groupStartIndex, endIndex)
+            .mapIndexed { index, note -> Pair(note, groupStartIndex + index) }
+            .filter { it.second >= currentNoteIndex }
+    }
+
     private fun playKey(keyIndex: Int) {
         val soundFile = when (keyIndex) {
             0 -> R.raw.c4
@@ -581,6 +598,18 @@ class CameraSource(
             handler.postDelayed({
                 triggeredKeys.remove(keyIndex)
             }, 500)
+
+            val numNote = keyIndex + 1
+            // Check if the played key matches the current note hint
+            if (currentNoteIndex < musicNotes.size && musicNotes[currentNoteIndex] == numNote) {
+                currentNoteIndex++
+                if (musicNotes[currentNoteIndex] == 0) {
+                    currentNoteIndex++
+                }
+                if (currentNoteIndex >= musicNotes.size) {
+                    currentNoteIndex = 0 // Restart from the beginning
+                }
+            }
         }
     }
 
