@@ -127,6 +127,9 @@ class CameraSource(
 
     private var cameraId: String = ""
 
+    private val handler = Handler(Looper.getMainLooper())
+    private val triggeredKeys = mutableSetOf<Int>()
+
     suspend fun initCamera() {
         camera = openCamera(cameraManager, cameraId)
         imageReader =
@@ -464,18 +467,19 @@ class CameraSource(
     ): Bitmap {
         if (keyPersons.isEmpty()) return bitmap
 
-        var outputBitmap = VisualizationUtils.drawPianoKeys(bitmap)
+        val keyPerson = keyPersons[0]
 
-        outputBitmap = VisualizationUtils.drawBodyKeypoints(
-            outputBitmap,
+        analysisStroke(keyPerson)
+        var outputBitmap = VisualizationUtils.drawBodyKeypoints(
+            bitmap,
             keyPersons,
             isTrackerEnabled
         )
 
-        val keyPerson = keyPersons[0]
-
-        analysisStroke(keyPerson)
         playPiano(keyPerson)
+        outputBitmap = VisualizationUtils.drawPianoKeys(outputBitmap, triggeredKeys)
+
+
 
         val headRotation = getSmoothHeadRotation(keyPerson)
 
@@ -497,7 +501,7 @@ class CameraSource(
 
     private fun playPiano(person: Person) {
         val halfScreenHeight = PREVIEW_HEIGHT / 2
-        val minDistance = PREVIEW_HEIGHT / 5
+        val minDistance = PREVIEW_HEIGHT / 6
 
         val leftWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
         val rightWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
@@ -518,7 +522,7 @@ class CameraSource(
             val currY = it.y
             if (currY > halfScreenHeight) {
                 for (prevY in previousLeftWristY) {
-                    if ((currY - prevY) > minDistance) {
+                    if (isValidKeyPosition(it.x) && ((currY - prevY) > minDistance)) {
                         playKey(it.x)
                         previousLeftWristY.clear()
                         break
@@ -535,7 +539,7 @@ class CameraSource(
             val currY = it.y
             if (currY > halfScreenHeight) {
                 for (prevY in previousRightWristY) {
-                    if ((currY - prevY) > minDistance) {
+                    if (isValidKeyPosition(it.x) &&(currY - prevY) > minDistance) {
                         playKey(it.x)
                         previousRightWristY.clear()
                         break
@@ -549,25 +553,35 @@ class CameraSource(
         }
     }
 
+    private fun isValidKeyPosition(x: Float): Boolean {
+        val keyWidth = PREVIEW_WIDTH / 7
+        val positionInKey = x % keyWidth
+        return positionInKey >= 20 && positionInKey <= (keyWidth - 10)
+    }
+
     private fun playKey(x: Float) {
-        val screenWidth = surfaceView.width
+        val screenWidth = PREVIEW_WIDTH
         val keyWidth = screenWidth / 7
 
         val keyIndex = (x / keyWidth).toInt()
 
         val soundFile = when (keyIndex) {
-            0 -> R.raw.c1
-            1 -> R.raw.c2
-            2 -> R.raw.c3
-            3 -> R.raw.c4
-            4 -> R.raw.c5
-            5 -> R.raw.c6
-            6 -> R.raw.c7
+            0 -> R.raw.c4
+            1 -> R.raw.d4
+            2 -> R.raw.e4
+            3 -> R.raw.f4
+            4 -> R.raw.g4
+            5 -> R.raw.a5
+            6 -> R.raw.b5
             else -> null
         }
 
         soundFile?.let {
             mediaPlayerPool.playSound(it)
+            triggeredKeys.add(keyIndex)
+            handler.postDelayed({
+                triggeredKeys.remove(keyIndex)
+            }, 300)
         }
     }
 

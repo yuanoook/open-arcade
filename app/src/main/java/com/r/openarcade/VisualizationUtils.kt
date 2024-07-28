@@ -335,17 +335,29 @@ object VisualizationUtils {
         )
     }
 
-    fun drawPianoKeys(bitmap: Bitmap): Bitmap {
+    fun drawPianoKeys(bitmap: Bitmap, triggeredKeys: MutableSet<Int>): Bitmap {
         val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(outputBitmap)
 
-        val paint = Paint().apply {
-            color = Color.LTGRAY
+        val rainbowColors = arrayOf(
+            Color.parseColor("#FF0000"), // Red
+            Color.parseColor("#FF7F00"), // Orange
+            Color.parseColor("#FFFF00"), // Yellow
+            Color.parseColor("#00FF00"), // Green
+            Color.parseColor("#0000FF"), // Blue
+            Color.parseColor("#4B0082"), // Indigo
+            Color.parseColor("#8B00FF")  // Violet
+        )
+
+        val triggeredPaint = Paint().apply {
+            color = Color.YELLOW
+            alpha = 192
             style = Paint.Style.FILL
         }
 
         val textPaint = Paint().apply {
-            color = Color.BLACK
+            color = Color.WHITE
+            alpha = 192
             textSize = 40f
             textAlign = Paint.Align.CENTER
         }
@@ -353,15 +365,31 @@ object VisualizationUtils {
         val screenWidth = outputBitmap.width
         val screenHeight = outputBitmap.height
         val keyWidth = screenWidth / 7
-        val keyHeight = 100 // Height of the piano keys
+        val defaultKeyHeight = 80 // Height of the piano keys
+        val triggeredKeyHeight = 120 // Height of the triggered piano keys
+        val noteNames = arrayOf("C - Do", "D - Re", "E - Mi", "F - Fa", "G - Sol", "A - La", "B - Si")
 
         for (i in 0 until 7) {
+            val paint = Paint().apply {
+                color = rainbowColors[i]
+                alpha = if (i in triggeredKeys) 192 else 64 // Set alpha to 75% opaque if triggered, else 50% transparent
+                style = Paint.Style.FILL
+            }
+
+
             val left = i * keyWidth
-            val right = left + keyWidth
-            val rect = Rect(left, (screenHeight - keyHeight) / 2, right, (screenHeight + keyHeight) / 2)
+            val right = left + keyWidth - 10
+            val keyHeight = if (i in triggeredKeys) triggeredKeyHeight else defaultKeyHeight
+            val rect = Rect(
+                left + 20,
+                (screenHeight - keyHeight) / 2,
+                right,
+                (screenHeight + keyHeight) / 2)
+
             canvas.drawRect(rect, paint)
             canvas.drawText(
-                "Key ${i + 1}", (left + right) / 2f,
+                noteNames[i],
+                (left + right) / 2f,
                 screenHeight / 2f,
                 textPaint)
         }
