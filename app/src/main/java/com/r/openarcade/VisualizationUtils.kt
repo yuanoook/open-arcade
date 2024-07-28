@@ -21,6 +21,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
+import android.graphics.Rect
 import com.r.openarcade.data.BodyPart
 import com.r.openarcade.data.KeyPoint
 import com.r.openarcade.data.Person
@@ -332,5 +333,39 @@ object VisualizationUtils {
                 ((abs(value) - 0.5) * zoom + 0.5).toFloat()
             )
         )
+    }
+
+    fun drawPianoKeys(bitmap: Bitmap): Bitmap {
+        val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+        val canvas = Canvas(outputBitmap)
+
+        val paint = Paint().apply {
+            color = Color.LTGRAY
+            style = Paint.Style.FILL
+        }
+
+        val textPaint = Paint().apply {
+            color = Color.BLACK
+            textSize = 40f
+            textAlign = Paint.Align.CENTER
+        }
+
+        val screenWidth = outputBitmap.width
+        val screenHeight = outputBitmap.height
+        val keyWidth = screenWidth / 7
+        val keyHeight = 100 // Height of the piano keys
+
+        for (i in 0 until 7) {
+            val left = i * keyWidth
+            val right = left + keyWidth
+            val rect = Rect(left, (screenHeight - keyHeight) / 2, right, (screenHeight + keyHeight) / 2)
+            canvas.drawRect(rect, paint)
+            canvas.drawText(
+                "Key ${i + 1}", (left + right) / 2f,
+                screenHeight / 2f,
+                textPaint)
+        }
+
+        return outputBitmap
     }
 }

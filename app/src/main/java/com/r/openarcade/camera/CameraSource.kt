@@ -22,6 +22,7 @@ import android.app.UiModeManager
 import android.content.res.Configuration
 
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.ImageFormat
 import android.graphics.Matrix
 import android.graphics.Rect
@@ -360,6 +361,7 @@ class CameraSource(
 
         val holder = surfaceView.holder
         val surfaceCanvas = holder.lockCanvas()
+
         surfaceCanvas?.let { canvas ->
             val canvasWidth = canvas.width
             val canvasHeight = canvas.height
@@ -462,8 +464,10 @@ class CameraSource(
     ): Bitmap {
         if (keyPersons.isEmpty()) return bitmap
 
-        val outputBitmap = VisualizationUtils.drawBodyKeypoints(
-            bitmap,
+        var outputBitmap = VisualizationUtils.drawPianoKeys(bitmap)
+
+        outputBitmap = VisualizationUtils.drawBodyKeypoints(
+            outputBitmap,
             keyPersons,
             isTrackerEnabled
         )
