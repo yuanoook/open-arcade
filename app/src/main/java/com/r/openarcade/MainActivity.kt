@@ -42,6 +42,8 @@ class MainActivity : AppCompatActivity() {
      * 3 == PoseNet model
      **/
     private var modelPos = 0
+    private var FPS_OPEN = false
+    private var DETECT_SCORE_OPEN = false
 
     /** Default device is CPU */
     private var device = Device.NNAPI
@@ -146,6 +148,8 @@ class MainActivity : AppCompatActivity() {
     private fun initializeCameraSource() {
         cameraSource = CameraSource(surfaceView, object : CameraSource.CameraSourceListener {
             override fun onFPSListener(fps: Int) {
+                if (!FPS_OPEN) return
+
                 Handler(Looper.getMainLooper()).post {
                     tvFPS.text = getString(R.string.tfe_pe_tv_fps, fps)
                 }
@@ -154,6 +158,8 @@ class MainActivity : AppCompatActivity() {
             override fun onDetectedInfo(
                 personScore: Float?
             ) {
+                if (!DETECT_SCORE_OPEN) return
+
                 Handler(Looper.getMainLooper()).post {
                     tvScore.text = getString(R.string.tfe_pe_tv_score, personScore ?: 0f)
                 }

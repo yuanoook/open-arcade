@@ -336,7 +336,13 @@ object VisualizationUtils {
         )
     }
 
-    fun drawPianoKeys(bitmap: Bitmap, triggeredKeys: MutableSet<Int>, noteHints: List<Pair<Int, Int>>): Bitmap {
+    fun drawPianoKeys(
+        bitmap: Bitmap,
+        triggeredKeys: MutableSet<Int>,
+        noteHints: List<Pair<Int, Int>>,
+        currentNoteIndex: Int,
+        playedRoundNum: Int
+    ): Bitmap {
         val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(outputBitmap)
 
@@ -376,7 +382,7 @@ object VisualizationUtils {
         val keyWidth = screenWidth / 7
         val defaultKeyHeight = 80 // Height of the piano keys
         val triggeredKeyHeight = 120 // Height of the triggered piano keys
-        val noteNames = arrayOf("C - Do", "D - Re", "E - Mi", "F - Fa", "G - Sol", "A - La", "B - Si")
+        val noteNames = arrayOf("Do", "Re", "Mi", "Fa", "Sol", "La", "Si")
 
         for (i in 0 until 7) {
             val fillPaint = Paint().apply {
@@ -409,12 +415,22 @@ object VisualizationUtils {
                 screenHeight / 2f + 10f,
                 if (i in triggeredKeys) triggeredTextPaint else textPaint)
 
+            val NOTE_MAX_ALPHA = 255  // Fully opaque
+            val NOTE_MIN_ALPHA = 0   // Minimum alpha for transparency
+
             // Draw the note hint indexes with vertical spacing
             noteHints.filter { it.first == i + 1 }.forEachIndexed { index, hint ->
+                var farRate = Math.abs(hint.second - currentNoteIndex) / 4f
+                var alphaRate = sqrt(farRate)
+                notePaint.alpha = (NOTE_MAX_ALPHA - (alphaRate * (NOTE_MAX_ALPHA - NOTE_MIN_ALPHA)))
+                    .toInt()
+                    .coerceIn(NOTE_MIN_ALPHA, NOTE_MAX_ALPHA)
+                notePaint.textSize = 80f * (1 - farRate).coerceIn(0.5f, 1f)
+
                 canvas.drawText(
-                    (hint.second + 1).toString(),
+                    (playedRoundNum + hint.second + 1).toString(),
                     (left + right) / 2f,
-                    screenHeight / 4f + (index * 80),
+                    screenHeight / 4f + 100 - (index * 80),
                     notePaint
                 )
             }

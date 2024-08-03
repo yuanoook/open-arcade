@@ -485,7 +485,7 @@ class CameraSource(
         playPiano(keyPerson)
 
         keepWristTrace(keyPerson)
-        outputBitmap = VisualizationUtils.drawPianoKeys(outputBitmap, triggeredKeys, getCurrentNoteGroup())
+        outputBitmap = VisualizationUtils.drawPianoKeys(outputBitmap, triggeredKeys, getCurrentNoteGroup(), currentNoteIndex, currentPlayRound * musicNotes.size)
         outputBitmap = VisualizationUtils.drawHandTrace(outputBitmap, leftWristTrace, rightWristTrace)
 
         return outputBitmap
@@ -577,6 +577,7 @@ class CameraSource(
         1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0
     )
 
+    private var currentPlayRound = 0
     private var currentNoteIndex = 0
     private val noteHintSize = 4
 
@@ -590,13 +591,13 @@ class CameraSource(
 
     private fun playKey(keyIndex: Int) {
         val soundFile = when (keyIndex) {
-            0 -> R.raw.c4
-            1 -> R.raw.d4
-            2 -> R.raw.e4
-            3 -> R.raw.f4
-            4 -> R.raw.g4
-            5 -> R.raw.a5
-            6 -> R.raw.b5
+            0 -> R.raw.p40 // C4
+            1 -> R.raw.p42 // D4
+            2 -> R.raw.p44 // E4
+            3 -> R.raw.p45 // F4
+            4 -> R.raw.p47 // G4
+            5 -> R.raw.p49 // A4
+            6 -> R.raw.p51 // B4
             else -> null
         }
 
@@ -615,6 +616,7 @@ class CameraSource(
                     currentNoteIndex++
                 }
                 if (currentNoteIndex >= musicNotes.size) {
+                    currentPlayRound++
                     currentNoteIndex = 0 // Restart from the beginning
                 }
             }
