@@ -58,6 +58,7 @@ import kotlin.math.max
 import kotlin.math.round
 import kotlin.math.sqrt
 
+import android.graphics.Color
 
 class CameraSource(
     private val surfaceView: SurfaceView,
@@ -88,6 +89,8 @@ class CameraSource(
 
     private val PREVIEW_WIDTH: Int = 1280
     private val PREVIEW_HEIGHT: Int = 720
+    private val PIANO_KEY_TOP_Y = PREVIEW_HEIGHT / 2f - 40f
+    private val PIANO_KEY_WIDTH = PREVIEW_WIDTH / 7f
 
     private val context: Context = surfaceView.context
     private val mediaPlayerPool = MediaPlayerPool(context, 10)
@@ -359,13 +362,15 @@ class CameraSource(
     }
 
     private fun visualize(persons: List<Person>, bitmap: Bitmap) {
+        val blankBitmap = Bitmap.createBitmap(bitmap.width, bitmap.height, bitmap.config!!)
         val keyPersons = persons.filter { it.score > MIN_CONFIDENCE }
-        val outputBitmap: Bitmap = drawBodyPointsAndInfo(keyPersons, bitmap)
+        val outputBitmap: Bitmap = drawBodyPointsAndInfo(keyPersons, blankBitmap)
 
         val holder = surfaceView.holder
         val surfaceCanvas = holder.lockCanvas()
 
         surfaceCanvas?.let { canvas ->
+            canvas.drawColor(Color.BLACK)
             val canvasWidth = canvas.width
             val canvasHeight = canvas.height
 
@@ -470,17 +475,20 @@ class CameraSource(
         val keyPerson = keyPersons[0]
 
         analysisStroke(keyPerson)
-        var outputBitmap = VisualizationUtils.drawBodyKeypoints(
-            bitmap,
-            keyPersons,
-            isTrackerEnabled
-        )
+        var outputBitmap = bitmap
+//        var outputBitmap = VisualizationUtils.drawBodyKeypoints(
+//            bitmap,
+//            keyPersons,
+//            isTrackerEnabled
+//        )
 
         playPiano(keyPerson)
 
         keepWristTrace(keyPerson)
         outputBitmap = VisualizationUtils.drawPianoKeys(outputBitmap, triggeredKeys, getCurrentNoteGroup())
         outputBitmap = VisualizationUtils.drawHandTrace(outputBitmap, leftWristTrace, rightWristTrace)
+
+        return outputBitmap
 
         val headRotation = getSmoothHeadRotation(keyPerson)
 
@@ -533,34 +541,34 @@ class CameraSource(
         prevPoints: MutableList<PointF>,
         currPoint: PointF?
     ) {
-        val halfScreenHeight = PREVIEW_HEIGHT / 2f
-        val minDistance = PREVIEW_HEIGHT / 6f
-        val keyWidth = PREVIEW_WIDTH / 7f
-
         currPoint?.let {
-            val currY = it.y
-
-            if (currY > halfScreenHeight) {
-                val iterator = prevPoints.iterator()
-                while (iterator.hasNext()) {
-                    val prevPoint = iterator.next()
-                    if (prevPoint.y <= halfScreenHeight && (currY - prevPoint.y) > minDistance) {
-                        for (keyIndex in 0 until 7) {
-                            if (isValidKeyPosition(prevPoint, it, keyIndex, keyWidth)) {
-                                playKey(keyIndex)
-                                prevPoints.clear()
-                                return
-                            }
-                        }
-                    }
-                }
-            }
-
             prevPoints.add(it)
             if (prevPoints.size > maxHistorySize) {
                 prevPoints.removeAt(0)
             }
+
+            val currY = it.y
+            if (currY < PIANO_KEY_TOP_Y) return
+            if (prevPoints.size == 1) return
+            if (prevPoints[prevPoints.size - 2].y > PIANO_KEY_TOP_Y) return
+
+            val keyIndex = findKeyIndex(prevPoints[prevPoints.size - 1], prevPoints[prevPoints.size - 2])
+
+            if (keyIndex == -1) return
+
+            playKey(keyIndex)
+            prevPoints.clear()
+            return
         }
+    }
+
+    private fun findKeyIndex(pointA: PointF, pointB: PointF): Int {
+        for (keyIndex in 0 until 7) {
+            if (isValidKeyPosition(pointA, pointB, keyIndex)) {
+                return keyIndex
+            }
+        }
+        return -1
     }
 
     private val musicNotes = listOf(
@@ -613,13 +621,13 @@ class CameraSource(
         }
     }
 
-    private fun isValidKeyPosition(prevPoint: PointF, currPoint: PointF, keyIndex: Int, keyWidth: Float): Boolean {
-        val keyLeftBound = keyWidth * keyIndex + 20
-        val keyRightBound = keyWidth * (keyIndex + 1) - 10
+    private fun isValidKeyPosition(prevPoint: PointF, currPoint: PointF, keyIndex: Int): Boolean {
+        val keyLeftBound = PIANO_KEY_WIDTH * keyIndex + 20
+        val keyRightBound = PIANO_KEY_WIDTH * (keyIndex + 1) - 10
 
         // Define the horizontal line segment for the key
-        val horizontalLineStart = PointF(keyLeftBound, PREVIEW_HEIGHT.toFloat() / 2)
-        val horizontalLineEnd = PointF(keyRightBound, PREVIEW_HEIGHT.toFloat() / 2)
+        val horizontalLineStart = PointF(keyLeftBound, PIANO_KEY_TOP_Y)
+        val horizontalLineEnd = PointF(keyRightBound, PIANO_KEY_TOP_Y)
 
         // Check intersection with the horizontal line of the key section
         return linesIntersect(prevPoint, currPoint, horizontalLineStart, horizontalLineEnd)
