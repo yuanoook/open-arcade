@@ -16,7 +16,7 @@ class SoundManager(context: Context) {
             .build()
 
         soundPool = SoundPool.Builder()
-            .setMaxStreams(7) // Maximum number of simultaneous sounds
+            .setMaxStreams(14) // Maximum number of simultaneous sounds
             .setAudioAttributes(audioAttributes)
             .build()
 

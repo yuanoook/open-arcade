@@ -74,23 +74,18 @@ class CameraSource(
     private val SCREEN_HEIGHT: Int = surfaceView.context.resources.displayMetrics.heightPixels
 
 // camera sizes - some example, take picture with wrong width and height will be problematic
-//        Width: 1920, Height: 1080 // good for TV
-//        Width: 1600, Height: 1200
-//        Width: 1600, Height: 720
-//        Width: 1440, Height: 1080
-//        Width: 1280, Height: 960
-//        Width: 1280, Height: 720 // good for TV
-//        Width: 960, Height: 720
-//        Width: 854, Height: 480
-//        Width: 800, Height: 600
-//        Width: 720, Height: 480
+//        by printCameraYUV420888Sizes
+
+//        Width: 320, Height: 240
+//        Width: 640, Height: 360
 //        Width: 640, Height: 480
-//        Width: 640, Height: 360 // good for TV
+//        Width: 1280, Height: 720
+//        Width: 1920, Height: 1080
 
-    private val PREVIEW_WIDTH: Int = (1280 / 2f).toInt()
-    private val PREVIEW_HEIGHT: Int = (720 / 2f).toInt()
+    private val PREVIEW_WIDTH: Int = 320
+    private val PREVIEW_HEIGHT: Int = 240
 
-    private val PERSON_ZOOM: Float = (SCREEN_WIDTH / PREVIEW_WIDTH).toFloat()
+    private val PERSON_ZOOM: Float = (SCREEN_WIDTH).toFloat() / (PREVIEW_WIDTH).toFloat()
 
     private val PIANO_KEY_TOP_Y = SCREEN_HEIGHT / 2f - 40f
     private val PIANO_KEY_WIDTH = SCREEN_WIDTH / 7f
@@ -175,8 +170,7 @@ class CameraSource(
                 image.close()
             }
 
-
-//            getCameraYUV420888Sizes(surfaceView.context, cameraId)
+            printCameraYUV420888Sizes(surfaceView.context, cameraId)
         }, imageReaderHandler)
 
         imageReader?.surface?.let { surface ->
@@ -212,7 +206,11 @@ class CameraSource(
         return uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
     }
 
-    private fun getCameraYUV420888Sizes(context: Context, cameraId: String) {
+    private var cameraLengthPrinted = false
+
+    private fun printCameraYUV420888Sizes(context: Context, cameraId: String) {
+        if (cameraLengthPrinted) return
+
         val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
         val characteristics = cameraManager.getCameraCharacteristics(cameraId)
         val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
@@ -222,6 +220,8 @@ class CameraSource(
                 println("Width: ${size.width}, Height: ${size.height}")
             }
         }
+
+        cameraLengthPrinted = true
     }
 
     private suspend fun createSession(targets: List<Surface>): CameraCaptureSession =
@@ -366,13 +366,15 @@ class CameraSource(
 
     private fun visualize(persons: List<Person>, bitmap: Bitmap) {
         val blankBitmap = Bitmap.createBitmap(
-            (bitmap.width * PERSON_ZOOM).toInt(),
-            (bitmap.height * PERSON_ZOOM).toInt(),
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
             bitmap.config!!
         )
         val keyPersons = persons
             .filter { it.score > MIN_CONFIDENCE }
-            .map{ VisualizationUtils.zoomPerson(it, PERSON_ZOOM) }
+            .map{ VisualizationUtils.remapPerson(it,
+                Pair(PREVIEW_WIDTH.toFloat(), PREVIEW_HEIGHT.toFloat()),
+                Pair(SCREEN_WIDTH.toFloat(), SCREEN_HEIGHT.toFloat())) }
 
         val outputBitmap: Bitmap = drawBodyPointsAndInfo(keyPersons, blankBitmap)
 
@@ -485,12 +487,22 @@ class CameraSource(
         val keyPerson = keyPersons[0]
 
         analysisStroke(keyPerson)
-        var outputBitmap = bitmap
-//        var outputBitmap = VisualizationUtils.drawBodyKeypoints(
-//            bitmap,
-//            keyPersons,
-//            isTrackerEnabled
-//        )
+//        var outputBitmap = bitmap
+
+        var outputBitmap = VisualizationUtils.drawBodyKeypoints(
+            bitmap,
+            keyPersons,
+            isTrackerEnabled
+        )
+
+
+        listener?.onDebug(
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            PREVIEW_WIDTH,
+            PREVIEW_HEIGHT,
+            PERSON_ZOOM
+        )
 
         playPiano(keyPerson)
 
@@ -500,6 +512,7 @@ class CameraSource(
             triggeredKeys,
             getCurrentNoteGroup(),
             currentNoteIndex,
+            noteSkippedNumber,
             currentPlayRound * musicNotes.size)
         outputBitmap = VisualizationUtils.drawHandTrace(
             outputBitmap,
@@ -509,15 +522,6 @@ class CameraSource(
         return outputBitmap
 
         val headRotation = getSmoothHeadRotation(keyPerson)
-
-//        listener?.onDebug(
-//            SCREEN_WIDTH,
-//            SCREEN_HEIGHT,
-//            PREVIEW_WIDTH,
-//            PREVIEW_HEIGHT,
-//            lastStokes,
-//            headRotation
-//        )
 
         return VisualizationUtils.drawHeadRotationLineOnBitmap(headRotation, outputBitmap)
     }
@@ -596,6 +600,7 @@ class CameraSource(
     )
 
     private var currentPlayRound = 0
+    private var noteSkippedNumber = 0
     private var currentNoteIndex = 0
     private val noteHintSize = 4
 
@@ -619,6 +624,7 @@ class CameraSource(
         if (currentNoteIndex < musicNotes.size && musicNotes[currentNoteIndex] == numNote) {
             currentNoteIndex++
             if (musicNotes[currentNoteIndex] == 0) {
+                noteSkippedNumber++
                 currentNoteIndex++
             }
             if (currentNoteIndex >= musicNotes.size) {

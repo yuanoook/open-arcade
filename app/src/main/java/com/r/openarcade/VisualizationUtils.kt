@@ -70,18 +70,44 @@ object VisualizationUtils {
         Pair(BodyPart.RIGHT_KNEE, BodyPart.RIGHT_ANKLE)
     )
 
-    fun zoomPerson(person: Person, x: Float): Person {
-        // Create a new list to store the scaled key points
-        val scaledKeyPoints = person.keyPoints.map { keyPoint ->
-            // Scale the coordinate of each key point by x
-            val newCoordinate = PointF(keyPoint.coordinate.x * x, keyPoint.coordinate.y * x)
-            // Create a new KeyPoint with the scaled coordinate and the same score
+    fun remapPerson(person: Person, detectRect: Pair<Float, Float>, showRect: Pair<Float, Float>): Person {
+        val detectWidth = detectRect.first
+        val detectHeight = detectRect.second
+        val showWidth = showRect.first
+        val showHeight = showRect.second
+
+        val detectAspectRatio = detectWidth / detectHeight
+        val showAspectRatio = showWidth / showHeight
+
+        val scaleFactor: Float
+        val xOffset: Float
+        val yOffset: Float
+
+        if (detectAspectRatio < showAspectRatio) {
+            // Detection rectangle is taller, scale based on width
+            scaleFactor = showWidth / detectWidth
+            val scaledDetectHeight = detectHeight * scaleFactor
+            yOffset = (showHeight - scaledDetectHeight) / 2
+            xOffset = 0f
+        } else {
+            // Show rectangle is taller, scale based on height
+            scaleFactor = showHeight / detectHeight
+            val scaledDetectWidth = detectWidth * scaleFactor
+            xOffset = (showWidth - scaledDetectWidth) / 2
+            yOffset = 0f
+        }
+
+        val remappedKeyPoints = person.keyPoints.map { keyPoint ->
+            val newCoordinate = PointF(
+                (keyPoint.coordinate.x * scaleFactor) + xOffset,
+                (keyPoint.coordinate.y * scaleFactor) + yOffset
+            )
             KeyPoint(keyPoint.bodyPart, newCoordinate, keyPoint.score)
         }
-        // Return a new Person object with the scaled key points and the same other properties
+
         return Person(
             id = person.id,
-            keyPoints = scaledKeyPoints,
+            keyPoints = remappedKeyPoints,
             boundingBox = person.boundingBox, // Optional: scale boundingBox if necessary
             score = person.score
         )
@@ -358,6 +384,7 @@ object VisualizationUtils {
         triggeredKeys: MutableSet<Int>,
         noteHints: List<Pair<Int, Int>>,
         currentNoteIndex: Int,
+        noteSkippedNumber: Int,
         playedRoundNum: Int
     ): Bitmap {
         val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
@@ -445,7 +472,7 @@ object VisualizationUtils {
                 notePaint.textSize = 80f * (1 - farRate).coerceIn(0.5f, 1f)
 
                 canvas.drawText(
-                    (playedRoundNum + hint.second + 1).toString(),
+                    (playedRoundNum + hint.second + 1 - noteSkippedNumber).toString(),
                     (left + right) / 2f,
                     (screenHeight / 2f - ((index + 1) * 80)) - (80 - notePaint.textSize) / 2,
                     notePaint
