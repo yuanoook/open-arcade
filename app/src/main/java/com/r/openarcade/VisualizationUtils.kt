@@ -70,6 +70,23 @@ object VisualizationUtils {
         Pair(BodyPart.RIGHT_KNEE, BodyPart.RIGHT_ANKLE)
     )
 
+    fun zoomPerson(person: Person, x: Float): Person {
+        // Create a new list to store the scaled key points
+        val scaledKeyPoints = person.keyPoints.map { keyPoint ->
+            // Scale the coordinate of each key point by x
+            val newCoordinate = PointF(keyPoint.coordinate.x * x, keyPoint.coordinate.y * x)
+            // Create a new KeyPoint with the scaled coordinate and the same score
+            KeyPoint(keyPoint.bodyPart, newCoordinate, keyPoint.score)
+        }
+        // Return a new Person object with the scaled key points and the same other properties
+        return Person(
+            id = person.id,
+            keyPoints = scaledKeyPoints,
+            boundingBox = person.boundingBox, // Optional: scale boundingBox if necessary
+            score = person.score
+        )
+    }
+
     // Draw line and point indicate body pose
     fun drawBodyKeypoints(
         input: Bitmap,
@@ -341,8 +358,7 @@ object VisualizationUtils {
         triggeredKeys: MutableSet<Int>,
         noteHints: List<Pair<Int, Int>>,
         currentNoteIndex: Int,
-        playedRoundNum: Int,
-        RESOLUTION_RATE: Float = 1f
+        playedRoundNum: Int
     ): Bitmap {
         val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(outputBitmap)
@@ -360,29 +376,29 @@ object VisualizationUtils {
         val textPaint = Paint().apply {
             color = Color.WHITE
 //            alpha = 192
-            textSize = 40f * RESOLUTION_RATE
+            textSize = 40f
             textAlign = Paint.Align.CENTER
         }
 
         val notePaint = Paint().apply {
             color = Color.RED
-            textSize = 80f * RESOLUTION_RATE
+            textSize = 80f
             textAlign = Paint.Align.CENTER
         }
 
         var triggeredTextPaint = Paint().apply {
             color = Color.WHITE
-            textSize = 54f * RESOLUTION_RATE
+            textSize = 54f
             textAlign = Paint.Align.CENTER
         }
 
         val screenWidth = outputBitmap.width
         val screenHeight = outputBitmap.height
-        val cornerRadius = 20f * RESOLUTION_RATE // Radius for the rounded corners
+        val cornerRadius = 20f // Radius for the rounded corners
 
         val keyWidth = screenWidth / 7
-        val defaultKeyHeight = 80 * RESOLUTION_RATE // Height of the piano keys
-        val triggeredKeyHeight = 120 * RESOLUTION_RATE // Height of the triggered piano keys
+        val defaultKeyHeight = 80 // Height of the piano keys
+        val triggeredKeyHeight = 120 // Height of the triggered piano keys
         val noteNames = arrayOf("Do", "Re", "Mi", "Fa", "Sol", "La", "Si")
 
         for (i in 0 until 7) {
@@ -394,13 +410,13 @@ object VisualizationUtils {
             val borderPaint = Paint().apply {
                 color = rainbowColors[i]
                 style = Paint.Style.STROKE
-                strokeWidth = 5f * RESOLUTION_RATE
+                strokeWidth = 5f
                 alpha = if (i in triggeredKeys) 255 else 192 // Set alpha to 100% opaque if triggered, else 0% transparent
             }
 
 
-            val left = i * keyWidth + 20 * RESOLUTION_RATE
-            val right = left + keyWidth - 30 * RESOLUTION_RATE
+            val left = i * keyWidth + 20
+            val right = left + keyWidth - 30
             val keyHeight = if (i in triggeredKeys) triggeredKeyHeight else defaultKeyHeight
             val rect = RectF(
                 left.toFloat(),
@@ -413,7 +429,7 @@ object VisualizationUtils {
             canvas.drawText(
                 noteNames[i],
                 (left + right) / 2f,
-                screenHeight / 2f + 10f * RESOLUTION_RATE,
+                screenHeight / 2f + 10f,
                 if (i in triggeredKeys) triggeredTextPaint else textPaint)
 
             val NOTE_MAX_ALPHA = 255  // Fully opaque
@@ -426,12 +442,12 @@ object VisualizationUtils {
                 notePaint.alpha = (NOTE_MAX_ALPHA - (alphaRate * (NOTE_MAX_ALPHA - NOTE_MIN_ALPHA)))
                     .toInt()
                     .coerceIn(NOTE_MIN_ALPHA, NOTE_MAX_ALPHA)
-                notePaint.textSize = 80f * (1 - farRate).coerceIn(0.5f, 1f) * RESOLUTION_RATE
+                notePaint.textSize = 80f * (1 - farRate).coerceIn(0.5f, 1f)
 
                 canvas.drawText(
                     (playedRoundNum + hint.second + 1).toString(),
                     (left + right) / 2f,
-                    (screenHeight / 4f + 100 / RESOLUTION_RATE - (index * 80)) * RESOLUTION_RATE,
+                    (screenHeight / 2f - ((index + 1) * 80)) - (80 - notePaint.textSize) / 2,
                     notePaint
                 )
             }
@@ -443,8 +459,7 @@ object VisualizationUtils {
     fun drawHandTrace(
         bitmap: Bitmap,
         leftWristHistory: List<PointF>,
-        rightWristHistory: List<PointF>,
-        RESOLUTION_RATE: Float = 1f
+        rightWristHistory: List<PointF>
     ): Bitmap {
         val outputBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
         val canvas = Canvas(outputBitmap)
@@ -467,7 +482,7 @@ object VisualizationUtils {
         fun drawHistory(history: List<PointF>, paint: Paint) {
             if (history.isEmpty()) return
 
-            var currentSize = 40f * RESOLUTION_RATE // Start with the largest size for the last point
+            var currentSize = 20f // Start with the largest size for the last point
             for (i in history.indices.reversed()) {
                 val point = history[i]
 

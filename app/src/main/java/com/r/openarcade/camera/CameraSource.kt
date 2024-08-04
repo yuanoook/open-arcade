@@ -87,15 +87,16 @@ class CameraSource(
 //        Width: 640, Height: 480
 //        Width: 640, Height: 360 // good for TV
 
-    private val RESOLUTION_RATE = 0.5f
+    private val PREVIEW_WIDTH: Int = (1280 / 2f).toInt()
+    private val PREVIEW_HEIGHT: Int = (720 / 2f).toInt()
 
-    private val PREVIEW_WIDTH: Int = (1280 * RESOLUTION_RATE).toInt()
-    private val PREVIEW_HEIGHT: Int = (720 * RESOLUTION_RATE).toInt()
-    private val PIANO_KEY_TOP_Y = PREVIEW_HEIGHT / 2f - 40f * RESOLUTION_RATE
-    private val PIANO_KEY_WIDTH = PREVIEW_WIDTH / 7f
+    private val PERSON_ZOOM: Float = (SCREEN_WIDTH / PREVIEW_WIDTH).toFloat()
+
+    private val PIANO_KEY_TOP_Y = SCREEN_HEIGHT / 2f - 40f
+    private val PIANO_KEY_WIDTH = SCREEN_WIDTH / 7f
 
     private val context: Context = surfaceView.context
-    private val mediaPlayerPool = MediaPlayerPool(context, 10)
+    private val soundManager = SoundManager(context)
 
     private val lock = Any()
     private var detector: PoseDetector? = null
@@ -365,11 +366,14 @@ class CameraSource(
 
     private fun visualize(persons: List<Person>, bitmap: Bitmap) {
         val blankBitmap = Bitmap.createBitmap(
-            bitmap.width,
-            bitmap.height,
+            (bitmap.width * PERSON_ZOOM).toInt(),
+            (bitmap.height * PERSON_ZOOM).toInt(),
             bitmap.config!!
         )
-        val keyPersons = persons.filter { it.score > MIN_CONFIDENCE }
+        val keyPersons = persons
+            .filter { it.score > MIN_CONFIDENCE }
+            .map{ VisualizationUtils.zoomPerson(it, PERSON_ZOOM) }
+
         val outputBitmap: Bitmap = drawBodyPointsAndInfo(keyPersons, blankBitmap)
 
         val holder = surfaceView.holder
@@ -496,13 +500,11 @@ class CameraSource(
             triggeredKeys,
             getCurrentNoteGroup(),
             currentNoteIndex,
-            currentPlayRound * musicNotes.size,
-            RESOLUTION_RATE)
+            currentPlayRound * musicNotes.size)
         outputBitmap = VisualizationUtils.drawHandTrace(
             outputBitmap,
             leftWristTrace,
-            rightWristTrace,
-            RESOLUTION_RATE)
+            rightWristTrace)
 
         return outputBitmap
 
@@ -522,7 +524,7 @@ class CameraSource(
 
     private val leftWristTrace = mutableListOf<PointF>()
     private val rightWristTrace = mutableListOf<PointF>()
-    private val maxWristTraceSize = 7 // Maximum number of history points to keep
+    private val maxWristTraceSize = 5 // Maximum number of history points to keep
 
     private fun keepWristTrace(person: Person) {
         val leftWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
@@ -606,42 +608,29 @@ class CameraSource(
     }
 
     private fun playKey(keyIndex: Int) {
-        val soundFile = when (keyIndex) {
-            0 -> R.raw.p40 // C4
-            1 -> R.raw.p42 // D4
-            2 -> R.raw.p44 // E4
-            3 -> R.raw.p45 // F4
-            4 -> R.raw.p47 // G4
-            5 -> R.raw.p49 // A4
-            6 -> R.raw.p51 // B4
-            else -> null
-        }
+        soundManager.playSound(keyIndex)
+        triggeredKeys.add(keyIndex)
+        handler.postDelayed({
+            triggeredKeys.remove(keyIndex)
+        }, 200)
 
-        soundFile?.let {
-            mediaPlayerPool.playSound(it)
-            triggeredKeys.add(keyIndex)
-            handler.postDelayed({
-                triggeredKeys.remove(keyIndex)
-            }, 500)
-
-            val numNote = keyIndex + 1
-            // Check if the played key matches the current note hint
-            if (currentNoteIndex < musicNotes.size && musicNotes[currentNoteIndex] == numNote) {
+        val numNote = keyIndex + 1
+        // Check if the played key matches the current note hint
+        if (currentNoteIndex < musicNotes.size && musicNotes[currentNoteIndex] == numNote) {
+            currentNoteIndex++
+            if (musicNotes[currentNoteIndex] == 0) {
                 currentNoteIndex++
-                if (musicNotes[currentNoteIndex] == 0) {
-                    currentNoteIndex++
-                }
-                if (currentNoteIndex >= musicNotes.size) {
-                    currentPlayRound++
-                    currentNoteIndex = 0 // Restart from the beginning
-                }
+            }
+            if (currentNoteIndex >= musicNotes.size) {
+                currentPlayRound++
+                currentNoteIndex = 0 // Restart from the beginning
             }
         }
     }
 
     private fun isValidKeyPosition(prevPoint: PointF, currPoint: PointF, keyIndex: Int): Boolean {
-        val keyLeftBound = PIANO_KEY_WIDTH * keyIndex + 20 * RESOLUTION_RATE
-        val keyRightBound = PIANO_KEY_WIDTH * (keyIndex + 1) - 10 * RESOLUTION_RATE
+        val keyLeftBound = PIANO_KEY_WIDTH * keyIndex + 20
+        val keyRightBound = PIANO_KEY_WIDTH * (keyIndex + 1) - 10
 
         // Define the horizontal line segment for the key
         val horizontalLineStart = PointF(keyLeftBound, PIANO_KEY_TOP_Y)
