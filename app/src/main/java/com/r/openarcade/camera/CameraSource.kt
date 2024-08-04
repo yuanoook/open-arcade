@@ -82,10 +82,8 @@ class CameraSource(
 //        Width: 1280, Height: 720
 //        Width: 1920, Height: 1080
 
-    private val PREVIEW_WIDTH: Int = 320
-    private val PREVIEW_HEIGHT: Int = 240
-
-    private val PERSON_ZOOM: Float = (SCREEN_WIDTH).toFloat() / (PREVIEW_WIDTH).toFloat()
+    private val PREVIEW_WIDTH: Int = 640
+    private val PREVIEW_HEIGHT: Int = 480
 
     private val PIANO_KEY_TOP_Y = SCREEN_HEIGHT / 2f - 40f
     private val PIANO_KEY_WIDTH = SCREEN_WIDTH / 7f
@@ -500,8 +498,7 @@ class CameraSource(
             SCREEN_WIDTH,
             SCREEN_HEIGHT,
             PREVIEW_WIDTH,
-            PREVIEW_HEIGHT,
-            PERSON_ZOOM
+            PREVIEW_HEIGHT
         )
 
         playPiano(keyPerson)
