@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
      * 3 == PoseNet model
      **/
     private var modelPos = 0
-    private var FPS_OPEN = false
+    private var FPS_OPEN = true
     private var DETECT_SCORE_OPEN = false
 
     /** Default device is CPU */
