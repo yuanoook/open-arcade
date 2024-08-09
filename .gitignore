@@ -1,0 +1,63 @@
+# Ignore hidden files and directories (Unix-like systems)
+.*
+!.gitignore
+
+# Gradle
+.gradle/
+**/build/
+**/release/
+local.properties
+
+# IntelliJ IDEA / Android Studio
+.idea/
+*.iml
+
+# Android specific
+/captures/
+/output/
+/externalNativeBuild/
+/cxx/
+
+# Proguard
+/proguard/
+
+# Android log files
+*.log
+*.hprof
+
+# Keystore files
+*.keystore
+
+# Google Services (e.g. Firebase)
+google-services.json
+google-services.plist
+
+# APKs and AABs
+*.apk
+*.ap_
+*.aab
+
+# Miscellaneous
+*.DS_Store
+*.class
+*.dex
+*.jar
+*.war
+*.ear
+*.db
+*.sqlite
+*.so
+*.dll
+*.exe
+*.out
+*.lib
+*.a
+*.o
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.backup
+*.orig
+*.rej
