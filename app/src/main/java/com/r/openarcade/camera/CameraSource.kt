@@ -16,6 +16,7 @@ limitations under the License.
 
 package com.r.openarcade.camera
 
+import PianoKeys
 import android.annotation.SuppressLint
 import android.content.Context
 import android.app.UiModeManager
@@ -444,14 +445,14 @@ class CameraSource(
         }
     }
 
-    private val button = GridButton(7, 1, text = "Hi")
+    private val pianoKeys: PianoKeys = PianoKeys(context, handler)
     private var lastPersons = mutableListOf<Person>()
 
     private fun updateGridButton(canvas: Canvas, persons: List<Person>) {
-        button.update(canvas)
+        pianoKeys.update(canvas)
 
         if (persons.isEmpty()) {
-            button.draw()
+            pianoKeys.draw()
             return
         }
 
@@ -475,14 +476,10 @@ class CameraSource(
                 imageFlipped,
             )
 
-            if (button.isStrokeCrossesTop(oldLeftWrist!!, newLeftWrist!!)) {
-                button.text = "Left"
-                soundManager.playSound(1)
-            } else if (button.isStrokeCrossesTop(oldRightWrist!!, newRightWrist!!)) {
-                button.text = "Right"
-                soundManager.playSound(5)
-            }
-            button.draw()
+            pianoKeys.stroke(oldLeftWrist!!, newLeftWrist!!)
+            pianoKeys.stroke(oldRightWrist!!, newRightWrist!!)
+
+            pianoKeys.draw()
         }
 
         lastPersons = persons.toMutableList()

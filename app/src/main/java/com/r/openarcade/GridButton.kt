@@ -4,10 +4,12 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.RectF
+import com.r.openarcade.camera.SoundManager
 
 data class GridButton(
     val xIndex: Int,
     val yIndex: Int,
+    val soundManager: SoundManager,
     val xTotal: Int = 7, // Default xTotal
     val yTotal: Int = 10, // Default yTotal
     var text: String = "", // Default empty text
@@ -17,8 +19,12 @@ data class GridButton(
     val cornerRadius: Float = 20f, // Default corner radius
     val fillAlpha: Int = 128, // Default fill alpha
     val borderAlpha: Int = 255, // Default border alpha
-    val marginXPercent: Float = 0.1f, // Default marginX: 10% of button width
-    val marginYPercent: Float = 0.1f,  // Default marginY: 10% of button height
+    val marginXPercent: Float = 0.05f, // Default marginX: 10% of button width
+    var marginYPercent: Float = 0.05f,  // Default marginY: 10% of button height
+    var fontSize: Float = 60f, // Default text size
+    val soundKey: Int = 0,
+    var lastActivatedAt: Long = 0L,
+    var active: Boolean = false,
     var canvas: Canvas? = null
 ) {
     fun update(newCanvas: Canvas) {
@@ -32,7 +38,7 @@ data class GridButton(
 
         // Calculate margins based on the percentage of the cell width and height
         val marginX = cellWidth * marginXPercent
-        val marginY = cellHeight * marginYPercent
+        val marginY = cellHeight * marginYPercent * (if (active) -2f else 1f)
 
         // Calculate the position of the button with margins
         val left = (xIndex - 1) * cellWidth + marginX
@@ -66,7 +72,7 @@ data class GridButton(
         if (text.isNotEmpty()) {
             val textPaint = Paint().apply {
                 color = borderColor
-                textSize = 32f
+                textSize = if (!active) fontSize else fontSize * 1.5f
                 textAlign = Paint.Align.CENTER
             }
             // Calculate text position
@@ -74,6 +80,14 @@ data class GridButton(
             val textY = (top + bottom) / 2 - (textPaint.ascent() + textPaint.descent()) / 2
             canvas!!.drawText(text, textX, textY, textPaint)
         }
+    }
+
+    fun stroke(oldPoint: PointF, newPoint: PointF): Boolean {
+        if (!isStrokeCrossesTop(oldPoint, newPoint)) return false
+
+        soundManager.playSound(soundKey)
+
+        return true
     }
 
     fun isStrokeCrossesTop(oldPoint: PointF, newPoint: PointF): Boolean {
