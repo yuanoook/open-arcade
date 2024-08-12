@@ -434,7 +434,7 @@ class CameraSource(
 
         surfaceCanvas?.let { canvas ->
             canvas.drawColor(Color.BLACK) // reset canvas
-            updateGridButton(canvas, persons)
+            playPiano(canvas, persons)
             drawBodyPointsAndInfo(canvas, persons)
             surfaceView.holder.unlockCanvasAndPost(canvas)
         }
@@ -443,7 +443,7 @@ class CameraSource(
     private val pianoKeys: PianoKeys = PianoKeys(context)
     private var lastPersons = mutableListOf<Person>()
 
-    private fun updateGridButton(canvas: Canvas, persons: List<Person>) {
+    private fun playPiano(canvas: Canvas, persons: List<Person>) {
         pianoKeys.update(canvas)
 
         if (persons.isEmpty()) {
