@@ -71,23 +71,28 @@ data class GridButton(
 
         val textX = (left + right) / 2
 
-        val textPaint = Paint().apply {
-            color = borderColor
-            textSize = if (!active) fontSize else fontSize * 1.5f
-            textAlign = Paint.Align.CENTER
-        }
-
         // Draw button text (if provided)
         if (text.isNotEmpty()) {
             // Calculate text position
+            val textPaint = Paint().apply {
+                color = borderColor
+                textSize = if (!active) fontSize else fontSize * 1.5f
+                textAlign = Paint.Align.CENTER
+            }
 
             val textY = (top + bottom) / 2 - (textPaint.ascent() + textPaint.descent()) / 2
             canvas!!.drawText(text, textX, textY, textPaint)
         }
 
+        val notePaint = Paint().apply {
+            color = borderColor
+            textSize = fontSize
+            textAlign = Paint.Align.CENTER
+        }
+
         hints?.takeIf { it.isNotEmpty() }?.forEachIndexed { index, hint ->
             val hintText = hint.toString()
-            canvas?.drawText(hintText, textX, top - 100f - (index * 50f), textPaint)
+            canvas?.drawText(hintText, textX, top - 80f - (index * 80f), notePaint)
         }
     }
 

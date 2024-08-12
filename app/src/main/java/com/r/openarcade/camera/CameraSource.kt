@@ -472,7 +472,6 @@ class CameraSource(
                 PREVIEW_WIDTH,
                 PREVIEW_HEIGHT,
                 rotation,
-                " - XX - ",
                 imageRotated,
                 imageFlipped,
             )

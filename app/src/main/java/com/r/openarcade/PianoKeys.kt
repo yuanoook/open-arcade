@@ -20,6 +20,7 @@ class PianoKeys(
         4, 4, 3, 3, 2, 2, 1, 0
     )
 ) {
+    private val GROUP_SIZE = 4
     private val soundManager = SoundManager(context)
     private val keys: List<GridButton> = listOf(
         GridButton(1, yIndex, soundManager, xTotal, yTotal, "Do", 0x80FF0000.toInt(), soundKey = 0),
@@ -42,16 +43,21 @@ class PianoKeys(
     }
 
     private fun getNoteGroupIndex(): Int {
-        return (currentNoteIndex % musicNotes.size) / 8
+        return (currentNoteIndex % musicNotes.size) / GROUP_SIZE
     }
 
     private fun getNoteHints(): Map<Int, List<Int>> {
         val groupIndex = getNoteGroupIndex()
-        val endIndex = minOf((groupIndex + 1) * 8, musicNotes.size)
 
-        return (currentNoteIndex until endIndex)
+        val passedRound = currentNoteIndex / musicNotes.size
+        val roundStartIndex = passedRound * musicNotes.size
+
+        val inRoundStartIndex = currentNoteIndex % musicNotes.size
+        val inRoundEndIndex = minOf((groupIndex + 1) * GROUP_SIZE, musicNotes.size)
+
+        return (inRoundStartIndex until inRoundEndIndex)
             .map { it to musicNotes[it] }
-            .groupBy({ it.second }, { it.first - noteZeroPassed })
+            .groupBy({ it.second }, { roundStartIndex + it.first + 1 - noteZeroPassed })
     }
 
     private val strokeResetTime: Long = 200L
