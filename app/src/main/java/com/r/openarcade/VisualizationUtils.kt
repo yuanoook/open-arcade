@@ -128,7 +128,7 @@ object VisualizationUtils {
                 (originalY * scaleFactor) + yOffset
             )
 
-            val flippedBodyPart = if (flip) keyPoint.bodyPart.flip() else keyPoint.bodyPart
+            val flippedBodyPart = if (!flip) keyPoint.bodyPart.flip() else keyPoint.bodyPart
 
             KeyPoint(flippedBodyPart, newCoordinate, keyPoint.score)
         }
@@ -507,12 +507,12 @@ object VisualizationUtils {
         rightWristHistory: List<PointF>
     ) {
         val leftWristPaint = Paint().apply {
-            color = Color.BLUE
+            color = Color.RED
             style = Paint.Style.FILL
         }
 
         val rightWristPaint = Paint().apply {
-            color = Color.RED
+            color = Color.BLUE
             style = Paint.Style.FILL
         }
 

@@ -62,6 +62,7 @@ import android.graphics.Color
 import android.os.Build
 import android.view.Display
 import android.view.WindowManager
+import com.r.openarcade.GridButton
 
 class CameraSource(
     private val surfaceView: SurfaceView,
@@ -422,8 +423,8 @@ class CameraSource(
         )
     }
 
-    private fun visualize(persons: List<Person>) {
-        val keyPersons = persons
+    private fun visualize(rawPersons: List<Person>) {
+        val persons = rawPersons
             .filter { it.score > MIN_CONFIDENCE }
             .map{ VisualizationUtils.remapPerson(it,
                 Pair(PREVIEW_WIDTH.toFloat(), PREVIEW_HEIGHT.toFloat()),
@@ -437,9 +438,54 @@ class CameraSource(
 
         surfaceCanvas?.let { canvas ->
             canvas.drawColor(Color.BLACK) // reset canvas
-            drawBodyPointsAndInfo(canvas, keyPersons)
+            updateGridButton(canvas, persons)
+            drawBodyPointsAndInfo(canvas, persons)
             surfaceView.holder.unlockCanvasAndPost(canvas)
         }
+    }
+
+    private val button = GridButton(7, 1, text = "Hi")
+    private var lastPersons = mutableListOf<Person>()
+
+    private fun updateGridButton(canvas: Canvas, persons: List<Person>) {
+        button.update(canvas)
+
+        if (persons.isEmpty()) {
+            button.draw()
+            return
+        }
+
+        if (lastPersons.isNotEmpty()) {
+            val lastPerson = lastPersons[0]
+            val person = persons[0]
+            val oldLeftWrist = lastPerson.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
+            val newLeftWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
+
+            val oldRightWrist = lastPerson.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
+            val newRightWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
+
+            listener?.onDebug(
+                SCREEN_WIDTH,
+                SCREEN_HEIGHT,
+                PREVIEW_WIDTH,
+                PREVIEW_HEIGHT,
+                rotation,
+                " - XX - ",
+                imageRotated,
+                imageFlipped,
+            )
+
+            if (button.isStrokeCrossesTop(oldLeftWrist!!, newLeftWrist!!)) {
+                button.text = "Left"
+                soundManager.playSound(1)
+            } else if (button.isStrokeCrossesTop(oldRightWrist!!, newRightWrist!!)) {
+                button.text = "Right"
+                soundManager.playSound(5)
+            }
+            button.draw()
+        }
+
+        lastPersons = persons.toMutableList()
     }
 
     private val leftWristPoints = LinkedList<PointF>()
@@ -519,28 +565,17 @@ class CameraSource(
             isTrackerEnabled
         )
 
-
-        listener?.onDebug(
-            SCREEN_WIDTH,
-            SCREEN_HEIGHT,
-            PREVIEW_WIDTH,
-            PREVIEW_HEIGHT,
-            rotation,
-            " - ",
-            imageRotated,
-            imageFlipped
-        )
-
-        playPiano(keyPerson)
+//        playPiano(keyPerson)
 
         keepWristTrace(keyPerson)
-        VisualizationUtils.drawPianoKeys(
-            canvas,
-            triggeredKeys,
-            getCurrentNoteGroup(),
-            currentNoteIndex,
-            noteSkippedNumber,
-            currentPlayRound * musicNotes.size)
+//        VisualizationUtils.drawPianoKeys(
+//            canvas,
+//            triggeredKeys,
+//            getCurrentNoteGroup(),
+//            currentNoteIndex,
+//            noteSkippedNumber,
+//            currentPlayRound * musicNotes.size)
+
         VisualizationUtils.drawHandTrace(
             canvas,
             leftWristTrace,
