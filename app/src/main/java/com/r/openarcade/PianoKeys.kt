@@ -7,13 +7,11 @@ import com.r.openarcade.camera.SoundManager
 
 class PianoKeys(
     context: Context,
-    handler: Handler,
     xTotal: Int = 7,
     yIndex: Int = 6,
     yTotal: Int = 11
 ) {
     private val soundManager = SoundManager(context)
-    private val handler = handler
     private val keys: List<GridButton> = listOf(
         GridButton(1, yIndex, soundManager, xTotal, yTotal, "Do", 0x80FF0000.toInt(), soundKey = 0),
         GridButton(2, yIndex, soundManager, xTotal, yTotal, "Re", 0x80FF7F00.toInt(), soundKey = 1),
@@ -50,7 +48,7 @@ class PianoKeys(
                 }
             }
         }
-        
+
         return hasStroked
     }
 

@@ -128,7 +128,6 @@ class CameraSource(
     private var cameraId: String = ""
 
     private val handler = Handler(Looper.getMainLooper())
-    private val triggeredKeys = mutableSetOf<Int>()
 
     private var isTV: Boolean = false
     private var isFrontFacing: Boolean = false
@@ -441,7 +440,7 @@ class CameraSource(
         }
     }
 
-    private val pianoKeys: PianoKeys = PianoKeys(context, handler)
+    private val pianoKeys: PianoKeys = PianoKeys(context)
     private var lastPersons = mutableListOf<Person>()
 
     private fun updateGridButton(canvas: Canvas, persons: List<Person>) {
