@@ -46,7 +46,7 @@ class PianoKeys(
         return (currentNoteIndex % musicNotes.size) / GROUP_SIZE
     }
 
-    private fun getNoteHints(): Map<Int, List<Int>> {
+    private fun getNoteHints(): Map<Int, List<Pair<Int, Int>>> {
         val groupIndex = getNoteGroupIndex()
 
         val passedRound = currentNoteIndex / musicNotes.size
@@ -57,7 +57,10 @@ class PianoKeys(
 
         return (inRoundStartIndex until inRoundEndIndex)
             .map { it to musicNotes[it] }
-            .groupBy({ it.second }, { roundStartIndex + it.first + 1 - noteZeroPassed })
+            .groupBy(
+                keySelector = { it.second },
+                valueTransform = { Pair(roundStartIndex + it.first + 1, it.first - inRoundStartIndex) }
+            )
     }
 
     private val strokeResetTime: Long = 200L

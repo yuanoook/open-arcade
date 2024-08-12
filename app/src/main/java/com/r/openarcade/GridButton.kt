@@ -25,8 +25,9 @@ data class GridButton(
     val soundKey: Int = 0,
     var lastActivatedAt: Long = 0L,
     var active: Boolean = false,
+    var toBeActive: Boolean = false,
     var canvas: Canvas? = null,
-    var hints: List<Int>? = null
+    var hints: List<Pair<Int, Int>>? = null
 ) {
     fun update(newCanvas: Canvas) {
         canvas = newCanvas
@@ -86,13 +87,16 @@ data class GridButton(
 
         val notePaint = Paint().apply {
             color = borderColor
-            textSize = fontSize
+            textSize = fontSize * 1.25f
             textAlign = Paint.Align.CENTER
         }
 
         hints?.takeIf { it.isNotEmpty() }?.forEachIndexed { index, hint ->
-            val hintText = hint.toString()
-            canvas?.drawText(hintText, textX, top - 80f - (index * 80f), notePaint)
+            notePaint.alpha = (255 - (hint.second * 64)).coerceIn(0, 255)
+            val hintText = hint.first.toString()
+            val lineHeight = notePaint.textSize
+            val textY = top - lineHeight - (index * lineHeight * 1.5f)
+            canvas?.drawText(hintText, textX, textY, notePaint)
         }
     }
 
