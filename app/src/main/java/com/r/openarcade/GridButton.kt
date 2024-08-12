@@ -25,7 +25,8 @@ data class GridButton(
     val soundKey: Int = 0,
     var lastActivatedAt: Long = 0L,
     var active: Boolean = false,
-    var canvas: Canvas? = null
+    var canvas: Canvas? = null,
+    var hints: List<Int>? = null
 ) {
     fun update(newCanvas: Canvas) {
         canvas = newCanvas
@@ -68,17 +69,25 @@ data class GridButton(
         canvas!!.drawRoundRect(rect, cornerRadius, cornerRadius, fillPaint)
         canvas!!.drawRoundRect(rect, cornerRadius, cornerRadius, borderPaint)
 
+        val textX = (left + right) / 2
+
+        val textPaint = Paint().apply {
+            color = borderColor
+            textSize = if (!active) fontSize else fontSize * 1.5f
+            textAlign = Paint.Align.CENTER
+        }
+
         // Draw button text (if provided)
         if (text.isNotEmpty()) {
-            val textPaint = Paint().apply {
-                color = borderColor
-                textSize = if (!active) fontSize else fontSize * 1.5f
-                textAlign = Paint.Align.CENTER
-            }
             // Calculate text position
-            val textX = (left + right) / 2
+
             val textY = (top + bottom) / 2 - (textPaint.ascent() + textPaint.descent()) / 2
             canvas!!.drawText(text, textX, textY, textPaint)
+        }
+
+        hints?.takeIf { it.isNotEmpty() }?.forEachIndexed { index, hint ->
+            val hintText = hint.toString()
+            canvas?.drawText(hintText, textX, top - 100f - (index * 50f), textPaint)
         }
     }
 

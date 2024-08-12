@@ -4,12 +4,21 @@ import android.graphics.Canvas
 import android.graphics.PointF
 import com.r.openarcade.GridButton
 import com.r.openarcade.camera.SoundManager
+import kotlin.math.ceil
 
 class PianoKeys(
     context: Context,
     xTotal: Int = 7,
     yIndex: Int = 6,
-    yTotal: Int = 11
+    yTotal: Int = 11,
+    val musicNotes: List<Int> = listOf(
+        1, 1, 5, 5, 6, 6, 5, 0,
+        4, 4, 3, 3, 2, 2, 1, 0,
+        5, 5, 4, 4, 3, 3, 2, 0,
+        5, 5, 4, 4, 3, 3, 2, 0,
+        1, 1, 5, 5, 6, 6, 5, 0,
+        4, 4, 3, 3, 2, 2, 1, 0
+    )
 ) {
     private val soundManager = SoundManager(context)
     private val keys: List<GridButton> = listOf(
@@ -21,9 +30,28 @@ class PianoKeys(
         GridButton(6, yIndex, soundManager, xTotal, yTotal, "La", 0x80007FFF.toInt(), soundKey = 5),
         GridButton(7, yIndex, soundManager, xTotal, yTotal, "Si", 0x80FF00FF.toInt(), soundKey = 6)
     )
-
     fun update(canvas: Canvas) {
         keys.forEach { it.update(canvas) }
+    }
+
+    private var currentNoteIndex = 0
+    private var noteZeroPassed = 0
+
+    private fun getNote(): Int {
+        return musicNotes[currentNoteIndex % musicNotes.size]
+    }
+
+    private fun getNoteGroupIndex(): Int {
+        return (currentNoteIndex % musicNotes.size) / 8
+    }
+
+    private fun getNoteHints(): Map<Int, List<Int>> {
+        val groupIndex = getNoteGroupIndex()
+        val endIndex = minOf((groupIndex + 1) * 8, musicNotes.size)
+
+        return (currentNoteIndex until endIndex)
+            .map { it to musicNotes[it] }
+            .groupBy({ it.second }, { it.first - noteZeroPassed })
     }
 
     private val strokeResetTime: Long = 200L
@@ -32,12 +60,23 @@ class PianoKeys(
         // Log the current time
         val currentTime = System.currentTimeMillis()
         var hasStroked: Boolean = false
+        var nextNote = getNote()
+        var noteHints = getNoteHints()
 
         // Iterate through all keys to handle time-based margin reset
         keys.forEach { key ->
+            var checkNote = key.soundKey + 1
             val keyStroked = !hasStroked && key.stroke(oldPoint, newPoint)
+            key.hints = noteHints[checkNote]
 
             if (keyStroked) {
+                if (checkNote == nextNote) {
+                    currentNoteIndex++
+                    if (getNote() == 0) {
+                        noteZeroPassed++
+                        currentNoteIndex++
+                    }
+                }
                 key.active = true
                 key.lastActivatedAt = currentTime
                 hasStroked = true

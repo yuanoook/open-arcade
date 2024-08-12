@@ -440,6 +440,12 @@ class CameraSource(
         }
     }
 
+    private val musicNotes = listOf(
+        1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0,
+        5, 5, 4, 4, 3, 3, 2, 0, 5, 5, 4, 4, 3, 3, 2, 0,
+        1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0
+    )
+
     private val pianoKeys: PianoKeys = PianoKeys(context)
     private var lastPersons = mutableListOf<Person>()
 
@@ -590,12 +596,6 @@ class CameraSource(
             }
         }
     }
-
-    private val musicNotes = listOf(
-        1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0,
-        5, 5, 4, 4, 3, 3, 2, 0, 5, 5, 4, 4, 3, 3, 2, 0,
-        1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0
-    )
 
     private fun stopImageReaderThread() {
         imageReaderThread?.quitSafely()
