@@ -90,11 +90,7 @@ class CameraSource(
     private var PREVIEW_WIDTH: Int = 1280
     private var PREVIEW_HEIGHT: Int = 720
 
-    private val PIANO_KEY_TOP_Y = SCREEN_HEIGHT / 2f - 40f
-    private val PIANO_KEY_WIDTH = SCREEN_WIDTH / 7f
-
     private val context: Context = surfaceView.context
-    private val soundManager = SoundManager(context)
 
     private val lock = Any()
     private var detector: PoseDetector? = null
@@ -562,17 +558,7 @@ class CameraSource(
             isTrackerEnabled
         )
 
-//        playPiano(keyPerson)
-
         keepWristTrace(keyPerson)
-//        VisualizationUtils.drawPianoKeys(
-//            canvas,
-//            triggeredKeys,
-//            getCurrentNoteGroup(),
-//            currentNoteIndex,
-//            noteSkippedNumber,
-//            currentPlayRound * musicNotes.size)
-
         VisualizationUtils.drawHandTrace(
             canvas,
             leftWristTrace,
@@ -606,113 +592,11 @@ class CameraSource(
         }
     }
 
-
-    private val previousLeftWristPoints = mutableListOf<PointF>()
-    private val previousRightWristPoints = mutableListOf<PointF>()
-    private val maxHistorySize = 4
-
-    private fun playPiano(person: Person) {
-        val leftWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.LEFT_WRIST }?.coordinate
-        val rightWrist = person.keyPoints.firstOrNull { it.bodyPart == BodyPart.RIGHT_WRIST }?.coordinate
-        checkAndPlayKey(previousLeftWristPoints, leftWrist)
-        checkAndPlayKey(previousRightWristPoints, rightWrist)
-    }
-
-    private fun checkAndPlayKey(
-        prevPoints: MutableList<PointF>,
-        currPoint: PointF?
-    ) {
-        currPoint?.let {
-            prevPoints.add(it)
-            if (prevPoints.size > maxHistorySize) {
-                prevPoints.removeAt(0)
-            }
-
-            val currY = it.y
-            if (currY < PIANO_KEY_TOP_Y) return
-            if (prevPoints.size == 1) return
-            if (prevPoints[prevPoints.size - 2].y > PIANO_KEY_TOP_Y) return
-
-            val keyIndex = findKeyIndex(prevPoints[prevPoints.size - 1], prevPoints[prevPoints.size - 2])
-
-            if (keyIndex == -1) return
-
-            playKey(keyIndex)
-            prevPoints.clear()
-            return
-        }
-    }
-
-    private fun findKeyIndex(pointA: PointF, pointB: PointF): Int {
-        for (keyIndex in 0 until 7) {
-            if (isValidKeyPosition(pointA, pointB, keyIndex)) {
-                return keyIndex
-            }
-        }
-        return -1
-    }
-
     private val musicNotes = listOf(
         1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0,
         5, 5, 4, 4, 3, 3, 2, 0, 5, 5, 4, 4, 3, 3, 2, 0,
         1, 1, 5, 5, 6, 6, 5, 0, 4, 4, 3, 3, 2, 2, 1, 0
     )
-
-    private var currentPlayRound = 0
-    private var noteSkippedNumber = 0
-    private var currentNoteIndex = 0
-    private val noteHintSize = 4
-
-    private fun getCurrentNoteGroup(): List<Pair<Int, Int>> {
-        val groupStartIndex = (currentNoteIndex / noteHintSize) * noteHintSize
-        val endIndex = (groupStartIndex + noteHintSize).coerceAtMost(musicNotes.size)
-        return musicNotes.subList(groupStartIndex, endIndex)
-            .mapIndexed { index, note -> Pair(note, groupStartIndex + index) }
-            .filter { it.second >= currentNoteIndex }
-    }
-
-    private fun playKey(keyIndex: Int) {
-        soundManager.playSound(keyIndex)
-        triggeredKeys.add(keyIndex)
-        handler.postDelayed({
-            triggeredKeys.remove(keyIndex)
-        }, 200)
-
-        val numNote = keyIndex + 1
-        // Check if the played key matches the current note hint
-        if (currentNoteIndex < musicNotes.size && musicNotes[currentNoteIndex] == numNote) {
-            currentNoteIndex++
-            if (musicNotes[currentNoteIndex] == 0) {
-                noteSkippedNumber++
-                currentNoteIndex++
-            }
-            if (currentNoteIndex >= musicNotes.size) {
-                currentPlayRound++
-                currentNoteIndex = 0 // Restart from the beginning
-            }
-        }
-    }
-
-    private fun isValidKeyPosition(prevPoint: PointF, currPoint: PointF, keyIndex: Int): Boolean {
-        val keyLeftBound = PIANO_KEY_WIDTH * keyIndex + 20
-        val keyRightBound = PIANO_KEY_WIDTH * (keyIndex + 1) - 10
-
-        // Define the horizontal line segment for the key
-        val horizontalLineStart = PointF(keyLeftBound, PIANO_KEY_TOP_Y)
-        val horizontalLineEnd = PointF(keyRightBound, PIANO_KEY_TOP_Y)
-
-        // Check intersection with the horizontal line of the key section
-        return linesIntersect(prevPoint, currPoint, horizontalLineStart, horizontalLineEnd)
-    }
-
-    private fun linesIntersect(p1: PointF, p2: PointF, p3: PointF, p4: PointF): Boolean {
-        val denom = (p4.y - p3.y) * (p2.x - p1.x) - (p4.x - p3.x) * (p2.y - p1.y)
-        if (denom == 0f) return false // Parallel lines
-        val ua = ((p4.x - p3.x) * (p1.y - p3.y) - (p4.y - p3.y) * (p1.x - p3.x)) / denom
-        val ub = ((p2.x - p1.x) * (p1.y - p3.y) - (p2.y - p1.y) * (p1.x - p3.x)) / denom
-        return ua in 0f..1f && ub in 0f..1f
-    }
-
 
     private fun stopImageReaderThread() {
         imageReaderThread?.quitSafely()
