@@ -26,6 +26,7 @@ import com.r.openarcade.data.Device
 import com.r.openarcade.ml.*
 
 import android.util.Log
+import androidx.activity.enableEdgeToEdge
 
 class MainActivity : AppCompatActivity() {
     companion object {
@@ -82,9 +83,10 @@ class MainActivity : AppCompatActivity() {
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setFullScreen()
+//        setFullScreen()
 
         // keep screen on while app is running
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
