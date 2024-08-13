@@ -21,9 +21,12 @@ class PianoKeys(
     private val switchMusicBtn = GridButton(7, 1, soundManager, xTotal, yTotal, "Switch", 0x80FFFFFF.toInt(), soundKey = 0)
 
     private val musicChoiceBtns: List<GridButton> = listOf(
-        GridButton(2, 3, soundManager, 5, 5, "Little Star", 0x80FF0000.toInt(), soundKey = 0),
-        GridButton(4, 3, soundManager, 5, 5, "Mommy Good", 0x80FF7F00.toInt(), soundKey = 1),
+        GridButton(2, 3, soundManager, 7, 5, "Just Piano", 0x80FF0000.toInt(), soundKey = 0),
+        GridButton(4, 3, soundManager, 7, 5, "Little Star", 0x80FF7F00.toInt(), soundKey = 1),
+        GridButton(6, 3, soundManager, 7, 5, "Mommy Good", 0x80FFFF00.toInt(), soundKey = 2),
     )
+
+    val emptyNotes: List<Int> = listOf(-1)
 
     val littleStarNotes: List<Int> = listOf(
         1, 1, 5, 5, 6, 6, 5, 0,
@@ -65,7 +68,7 @@ class PianoKeys(
         0, 0, 0, 0, 0, 0, 0, 0     // Ending line (optional)
     )
 
-    private val musicChoices: List<List<Int>> = listOf(littleStarNotes, mommyGoodNotes)
+    private val musicChoices: List<List<Int>> = listOf(emptyNotes, littleStarNotes, mommyGoodNotes)
 
     private var musicNotes: List<Int> = musicChoices[0]
 
