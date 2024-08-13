@@ -87,8 +87,8 @@ class CameraSource(
 //        Width: 1280, Height: 720  // 12fps
 //        Width: 1920, Height: 1080 // 9fps
 
-    private var PREVIEW_WIDTH: Int = 1280
-    private var PREVIEW_HEIGHT: Int = 720
+    private var PREVIEW_WIDTH: Int = 320
+    private var PREVIEW_HEIGHT: Int = 240
 
     private val context: Context = surfaceView.context
 
